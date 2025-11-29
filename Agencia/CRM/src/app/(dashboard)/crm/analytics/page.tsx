@@ -32,7 +32,14 @@ export default async function AnalyticsPage() {
     return sum + parseValue(lead.value);
   }, 0);
 
-  const leadsByColumn = columns.map((col: Column) => {
+  interface ColumnStat {
+    id: string;
+    name: string;
+    count: number;
+    percentage: number;
+  }
+
+  const leadsByColumn: ColumnStat[] = columns.map((col: Column) => {
     const count = leads.filter((l: Lead) => l.columnId === col.id).length;
     return {
       id: col.id,
@@ -118,7 +125,7 @@ export default async function AnalyticsPage() {
             <CardTitle>Funil de Vendas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {leadsByColumn.map((col) => (
+            {leadsByColumn.map((col: ColumnStat) => (
               <div key={col.id} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-slate-700 dark:text-slate-300">{col.name}</span>
@@ -142,7 +149,7 @@ export default async function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end justify-between h-[200px] w-full gap-2 mt-4">
-              {monthlyData.map((d) => (
+              {monthlyData.map((d: { month: string; value: number }) => (
                 <div key={d.month} className="flex flex-col items-center gap-2 w-full group">
                     <div 
                         className="w-full bg-indigo-100 dark:bg-indigo-900/30 rounded-t-md group-hover:bg-indigo-200 transition-all relative"
