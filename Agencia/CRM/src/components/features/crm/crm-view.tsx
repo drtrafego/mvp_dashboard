@@ -202,7 +202,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode }:
             </div>
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
               <Button 
-                variant={view === "board" ? "white" : "ghost"} 
+                variant="ghost"
                 size="sm" 
                 onClick={() => handleViewChange("board")}
                 className={cn(
@@ -213,7 +213,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode }:
                   <LayoutGrid className="h-4 w-4 mr-1" /> Kanban
               </Button>
               <Button 
-                variant={view === "list" ? "white" : "ghost"} 
+                variant="ghost"
                 size="sm" 
                 onClick={() => handleViewChange("list")}
                 className={cn(
