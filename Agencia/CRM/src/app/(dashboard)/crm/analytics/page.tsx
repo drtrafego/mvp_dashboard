@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
-import { getLeads, getColumns } from "@/server/actions/leads";
+import { getLeads, getColumns } from "../../../../server/actions/leads";
 
 export const dynamic = 'force-dynamic';
 
