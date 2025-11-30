@@ -14,6 +14,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "baseUrl": ".",
+    "rootDir": ".",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
