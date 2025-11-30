@@ -1,6 +1,6 @@
-import { getLeads, getColumns } from "@/server/actions/leads";
-import { getSettings } from "@/server/actions/settings";
-import { CrmView } from "@/components/features/crm/crm-view";
+import { getLeads, getColumns } from "../../../server/actions/leads";
+import { getSettings } from "../../../server/actions/settings";
+import { CrmView } from "../../../components/features/crm/crm-view";
 
 export const dynamic = 'force-dynamic';
 
