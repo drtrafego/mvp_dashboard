@@ -1,16 +1,8 @@
-import { getLeads } from "../../../../server/actions/leads";
-import { startOfMonth } from "date-fns/startOfMonth";
-import { endOfMonth } from "date-fns/endOfMonth";
-import { eachDayOfInterval } from "date-fns/eachDayOfInterval";
-import { format } from "date-fns/format";
-import { isSameMonth } from "date-fns/isSameMonth";
-import { isSameDay } from "date-fns/isSameDay";
-import { addDays } from "date-fns/addDays";
-import { startOfWeek } from "date-fns/startOfWeek";
-import { endOfWeek } from "date-fns/endOfWeek";
+import { getLeads } from "@/server/actions/leads";
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isSameDay, addDays, startOfWeek, endOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "../../../../lib/utils";
-import { Badge } from "../../../../components/ui/badge";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = 'force-dynamic';
 
