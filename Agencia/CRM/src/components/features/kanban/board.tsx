@@ -60,23 +60,6 @@ export function Board({ initialLeads, columns: initialColumns, onLeadsChange }: 
     setLocalLeads(initialLeads);
   }, [initialLeads]);
 
-  // Force refresh of local state when editing dialog closes or leads update
-  useEffect(() => {
-    // If localLeads doesn't match initialLeads in terms of column placement,
-    // it means the server has newer info (or older info that we should respect).
-    // However, we want to avoid jitter.
-    // A simple deep equality check or just re-syncing is safer here if we trust the server.
-    
-    const hasDiscrepancy = localLeads.some(local => {
-        const server = initialLeads.find(s => s.id === local.id);
-        return server && (server.columnId !== local.columnId || server.position !== local.position);
-    });
-
-    if (hasDiscrepancy) {
-        setLocalLeads(initialLeads);
-    }
-  }, [initialLeads, localLeads]);
-
   useEffect(() => {
     setLocalColumns(initialColumns);
   }, [initialColumns]);
