@@ -1,0 +1,313 @@
+Eu entendo perfeitamente o seu cenário. O que está acontecendo é um **Desalinhamento de Estado (State Desynchronization)**.
+
+**O Diagnóstico do Arquiteto:**
+
+1.  **Por que a Coluna volta?** O evento `onDragEnd` não está persistindo a nova ordem no banco (ou no estado local) corretamente. O React re-renderiza e "puxa" a ordem antiga.
+2.  **Por que o Lead volta quando move a Coluna?** Esse é o ponto crítico. O seu estado de "Colunas" e o estado de "Leads" estão brigando. Quando você move a coluna, o componente pai re-renderiza tudo baseando-se no estado inicial dos leads (que ele "lembra" ser o antigo), ignorando o movimento que você acabou de fazer no lead.
+
+Para resolver isso, precisamos de uma implementação "Canônica" do `dnd-kit` para Kanban.
+
+Aqui está a **Solução Definitiva**. Vamos reescrever o cérebro do Kanban (`board.tsx`) para gerenciar tudo em um lugar só, sem conflitos.
+
+-----
+
+### PASSO 1: O CÉREBRO (Substitua todo o `board.tsx`)
+
+O segredo aqui é separar: `onDragOver` cuida de mover leads ENTRE colunas (visual), e `onDragEnd` cuida de SALVAR a posição final.
+
+Copie este código para `src/components/features/kanban/board.tsx`. Ele assume que você tem Server Actions (`updateLeadStatus` e `updateColumnOrder`).
+
+```tsx
+"use client";
+
+import { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
+import {
+  DndContext,
+  DragOverlay,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+  TouchSensor,
+  closestCorners,
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
+  defaultDropAnimationSideEffects,
+  DropAnimation,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
+import { Column } from "./column"; // Sua coluna refatorada (sem useDroppable)
+import { LeadCard } from "./lead-card"; // Seu card
+import { Column as ColumnType, Lead } from "@/types"; // Seus tipos
+
+// 1. Configuração de Sensores (Para evitar clicks acidentais)
+const SENSORS_CONFIG = {
+  activationConstraint: {
+    distance: 5, // Só começa a arrastar se mover 5px
+  },
+};
+
+interface BoardProps {
+  initialColumns: ColumnType[];
+  initialLeads: Lead[];
+}
+
+export function Board({ initialColumns, initialLeads }: BoardProps) {
+  // Estado Local (Single Source of Truth)
+  const [columns, setColumns] = useState<ColumnType[]>(initialColumns);
+  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  
+  // Item sendo arrastado no momento (para o Overlay)
+  const [activeColumn, setActiveColumn] = useState<ColumnType | null>(null);
+  const [activeLead, setActiveLead] = useState<Lead | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, SENSORS_CONFIG),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor)
+  );
+
+  // IDs para o SortableContext
+  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+
+  // --- HANDLERS ---
+
+  function onDragStart(event: DragStartEvent) {
+    if (event.active.data.current?.type === "Column") {
+      setActiveColumn(event.active.data.current.column);
+      return;
+    }
+    if (event.active.data.current?.type === "Lead") {
+      setActiveLead(event.active.data.current.lead);
+      return;
+    }
+  }
+
+  // Cuida APENAS de mover Leads entre colunas enquanto arrasta
+  function onDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    const isActiveALead = active.data.current?.type === "Lead";
+    const isOverALead = over.data.current?.type === "Lead";
+    const isOverAColumn = over.data.current?.type === "Column";
+
+    if (!isActiveALead) return;
+
+    // Cenário 1: Arrastando Lead sobre outro Lead
+    if (isActiveALead && isOverALead) {
+      setLeads((leads) => {
+        const activeIndex = leads.findIndex((l) => l.id === activeId);
+        const overIndex = leads.findIndex((l) => l.id === overId);
+        
+        // Se estão na mesma coluna, o onDragEnd resolve a ordenação.
+        // Se mudou de coluna, precisamos atualizar o status visualmente AGORA.
+        if (leads[activeIndex].status !== leads[overIndex].status) {
+          const newLeads = [...leads];
+          newLeads[activeIndex].status = leads[overIndex].status; // Adota o status do alvo
+          return arrayMove(newLeads, activeIndex, overIndex - 1); // Insere visualmente
+        }
+        return leads; // Deixa o arrayMove pro DragEnd se for mesma coluna
+      });
+    }
+
+    // Cenário 2: Arrastando Lead sobre uma Coluna VAZIA (ou o header da coluna)
+    if (isActiveALead && isOverAColumn) {
+      setLeads((leads) => {
+        const activeIndex = leads.findIndex((l) => l.id === activeId);
+        const activeLead = leads[activeIndex];
+        
+        // Se o lead já está nessa coluna, não faz nada
+        if (activeLead.status === overId) return leads;
+
+        // Se não, muda o status dele para a nova coluna
+        const newLeads = [...leads];
+        newLeads[activeIndex].status = overId as string; // Assume ID da coluna como Status
+        return arrayMove(newLeads, activeIndex, activeIndex); // Mantém posição, muda status
+      });
+    }
+  }
+
+  // Cuida de FINALIZAR a ação (Salvar no Banco)
+  function onDragEnd(event: DragEndEvent) {
+    setActiveColumn(null);
+    setActiveLead(null);
+
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    // === MOVENDO COLUNAS ===
+    if (active.data.current?.type === "Column") {
+      if (activeId !== overId) {
+        setColumns((columns) => {
+          const oldIndex = columns.findIndex((col) => col.id === activeId);
+          const newIndex = columns.findIndex((col) => col.id === overId);
+          const newOrder = arrayMove(columns, oldIndex, newIndex);
+          
+          // TODO: Chamar Server Action para salvar ordem das colunas
+          // updateColumnOrder(newOrder); 
+          return newOrder;
+        });
+      }
+      return;
+    }
+
+    // === MOVENDO LEADS (Drop Final) ===
+    if (active.data.current?.type === "Lead") {
+      // O onDragOver já cuidou de mudar o status visualmente.
+      // Aqui nós apenas consolidamos a ordem final dentro da coluna.
+      
+      setLeads((leads) => {
+        const activeIndex = leads.findIndex((l) => l.id === activeId);
+        const overIndex = leads.findIndex((l) => l.id === overId);
+        
+        if (activeIndex !== overIndex) {
+          const newOrderedLeads = arrayMove(leads, activeIndex, overIndex);
+          
+          // TODO: Chamar Server Action para salvar TUDO (novo status e nova posição)
+          // const movedLead = newOrderedLeads[overIndex];
+          // updateLeadStatusAndPosition(movedLead.id, movedLead.status, overIndex);
+          
+          return newOrderedLeads;
+        }
+        return leads;
+      });
+    }
+  }
+
+  // Filtra leads por coluna para passar pro componente filho
+  const getLeadsByColumn = (columnId: string) => {
+    return leads.filter((lead) => lead.status === columnId);
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+    >
+      <div className="flex gap-4 h-full overflow-x-auto p-4 items-start">
+        <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
+          {columns.map((col) => (
+            <Column 
+                key={col.id} 
+                column={col} 
+                leads={getLeadsByColumn(col.id)} 
+            />
+          ))}
+        </SortableContext>
+      </div>
+
+      {/* OVERLAY: O "Fantasma" que segue o mouse */}
+      {createPortal(
+        <DragOverlay>
+          {activeColumn && (
+             <div className="opacity-80 rotate-2 cursor-grabbing">
+                {/* Renderiza uma versão simplificada da coluna arrastada */}
+                <Column column={activeColumn} leads={getLeadsByColumn(activeColumn.id)} />
+             </div>
+          )}
+          {activeLead && (
+             <div className="opacity-80 rotate-2 cursor-grabbing">
+                 <LeadCard lead={activeLead} />
+             </div>
+          )}
+        </DragOverlay>,
+        document.body
+      )}
+    </DndContext>
+  );
+}
+```
+
+-----
+
+### PASSO 2: A COLUNA (Simplificação Radical)
+
+No arquivo `column.tsx`, **remova** qualquer menção a `useDroppable`. O `useSortable` já faz tudo.
+
+```tsx
+// src/components/features/kanban/column.tsx
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useMemo } from "react";
+import { LeadCard } from "./lead-card";
+import { cn } from "@/lib/utils";
+import { Column as ColumnType, Lead } from "@/types";
+
+interface ColumnProps {
+  column: ColumnType;
+  leads: Lead[];
+}
+
+export function Column({ column, leads }: ColumnProps) {
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: column.id,
+    data: { type: "Column", column },
+  });
+
+  const style = {
+    transition,
+    transform: CSS.Translate.toString(transform),
+  };
+
+  const leadsIds = useMemo(() => leads.map((l) => l.id), [leads]);
+
+  if (isDragging) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="w-[300px] h-[500px] bg-slate-100/50 border-2 border-dashed border-slate-300 rounded-xl"
+      />
+    );
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="w-[300px] flex flex-col gap-2">
+      {/* Header: Só aqui tem os listeners de arrastar a COLUNA */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="bg-slate-100 p-3 rounded-xl flex justify-between items-center cursor-grab active:cursor-grabbing border border-slate-200"
+      >
+        <h3 className="font-semibold text-slate-700">{column.title}</h3>
+        <span className="text-xs bg-white px-2 py-1 rounded text-slate-500 border border-slate-100">
+          {leads.length}
+        </span>
+      </div>
+
+      {/* Área dos Cards: Contexto Vertical */}
+      <div className="bg-slate-50/50 p-2 rounded-xl border border-slate-100 min-h-[150px] flex flex-col gap-2">
+        <SortableContext items={leadsIds} strategy={verticalListSortingStrategy}>
+          {leads.map((lead) => (
+            <LeadCard key={lead.id} lead={lead} />
+          ))}
+        </SortableContext>
+      </div>
+    </div>
+  );
+}
+```
