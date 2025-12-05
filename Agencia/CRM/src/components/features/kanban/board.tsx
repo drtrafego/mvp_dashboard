@@ -159,9 +159,13 @@ export function Board({ columns: initialColumns, initialLeads }: BoardProps) {
           
           // Set ignore flag BEFORE calling server action to prevent race condition
           ignoreExternalUpdatesRef.current = true;
+          console.log("[Board] Sending new column order:", newOrder.map(c => c.id));
           
           // Call server action and handle potential errors
           updateColumnOrder(newOrder.map(c => c.id))
+            .then(() => {
+                console.log("[Board] Column order saved successfully");
+            })
             .catch(err => {
                 console.error("Failed to update column order:", err);
                 setLastError(`Erro ao salvar ordem das colunas: ${err.message}`);

@@ -144,15 +144,23 @@ export async function updateColumnOrder(orderedIds: string[]) {
     console.log(`[updateColumnOrder] Org: ${orgId} | New Order:`, orderedIds);
     
     try {
-        // Process updates sequentially to avoid transaction complexities with some drivers
+        // Process updates sequentially
         for (let i = 0; i < orderedIds.length; i++) {
-            await db.update(columns)
+            const result = await db.update(columns)
                 .set({ order: i })
-                .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, orgId)));
+                .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, orgId)))
+                .returning({ id: columns.id });
+            
+            if (result.length === 0) {
+                console.warn(`[updateColumnOrder] Warning: No column updated for ID ${orderedIds[i]} (Index ${i})`);
+            }
         }
         
         revalidatePath('/dashboard/crm');
-        console.log(`[updateColumnOrder] Success`);
+        console.log(`[updateColumnOrder] Success - Revalidated path`);
+        
+        // Optional: Return the new order for verification
+        return { success: true };
     } catch (error) {
         console.error("[updateColumnOrder] Error:", error);
         throw error;
