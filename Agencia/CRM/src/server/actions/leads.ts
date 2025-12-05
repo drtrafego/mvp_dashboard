@@ -59,8 +59,8 @@ export async function getLeads() {
 }
 
 export async function updateLeadStatus(id: string, newColumnId: string, newPosition: number) {
-  // Verify ownership...
-  console.log(`[updateLeadStatus] Moving lead ${id} to column ${newColumnId} at pos ${newPosition}`);
+  const orgId = await getOrgId();
+  console.log(`[updateLeadStatus] Org: ${orgId} | Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition})`);
   
   try {
       await db.update(leads)
@@ -68,9 +68,10 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
           columnId: newColumnId, 
           position: newPosition 
         })
-        .where(eq(leads.id, id));
+        .where(and(eq(leads.id, id), eq(leads.organizationId, orgId)));
         
       revalidatePath('/dashboard/crm');
+      console.log(`[updateLeadStatus] Success`);
   } catch (error) {
       console.error("[updateLeadStatus] Error:", error);
       throw error;
@@ -86,6 +87,8 @@ export async function createLead(formData: FormData) {
   const valueStr = formData.get("value") as string;
   const value = valueStr ? valueStr : null;
   const orgId = await getOrgId();
+
+  console.log(`[createLead] Creating lead for Org: ${orgId}`);
 
   // Get the first column to add the lead to
   const firstColumn = await db.query.columns.findFirst({
@@ -115,6 +118,7 @@ export async function createLead(formData: FormData) {
 
 export async function createColumn(title: string) {
     const orgId = await getOrgId();
+    console.log(`[createColumn] Org: ${orgId} | Title: ${title}`);
     const existingColumns = await getColumns();
     
     await db.insert(columns).values({
@@ -127,29 +131,32 @@ export async function createColumn(title: string) {
 }
 
 export async function updateColumn(id: string, title: string) {
-    console.log(`Updating column ${id} to title: ${title}`);
+    const orgId = await getOrgId();
+    console.log(`[updateColumn] Org: ${orgId} | Col: ${id} -> Title: ${title}`);
     await db.update(columns)
         .set({ title })
-        .where(eq(columns.id, id));
+        .where(and(eq(columns.id, id), eq(columns.organizationId, orgId)));
     revalidatePath('/dashboard/crm');
 }
 
 export async function updateColumnOrder(orderedIds: string[]) {
-    console.log("Updating column order:", orderedIds);
     const orgId = await getOrgId();
+    console.log(`[updateColumnOrder] Org: ${orgId} | New Order:`, orderedIds);
     
-    // Use a transaction to ensure atomicity if possible, or just parallel updates
-    // For simplicity, we iterate and update. In production, use a single SQL query with CASE/WHEN or transaction.
-    
-    await db.transaction(async (tx) => {
+    try {
+        // Process updates sequentially to avoid transaction complexities with some drivers
         for (let i = 0; i < orderedIds.length; i++) {
-            await tx.update(columns)
+            await db.update(columns)
                 .set({ order: i })
                 .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, orgId)));
         }
-    });
-    
-    revalidatePath('/dashboard/crm');
+        
+        revalidatePath('/dashboard/crm');
+        console.log(`[updateColumnOrder] Success`);
+    } catch (error) {
+        console.error("[updateColumnOrder] Error:", error);
+        throw error;
+    }
 }
 
 export async function deleteColumn(id: string) {

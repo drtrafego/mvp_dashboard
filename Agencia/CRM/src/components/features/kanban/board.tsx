@@ -156,7 +156,15 @@ export function Board({ columns: initialColumns, initialLeads }: BoardProps) {
           
           // Set ignore flag BEFORE calling server action to prevent race condition
           ignoreExternalUpdatesRef.current = true;
-          updateColumnOrder(newOrder.map(c => c.id)); 
+          
+          // Call server action and handle potential errors
+          updateColumnOrder(newOrder.map(c => c.id))
+            .catch(err => {
+                console.error("Failed to update column order:", err);
+                // Optional: Revert changes or show toast
+                ignoreExternalUpdatesRef.current = false;
+            });
+
           return newOrder;
         });
       }
@@ -178,7 +186,12 @@ export function Board({ columns: initialColumns, initialLeads }: BoardProps) {
         
         // Set ignore flag BEFORE calling server action
         ignoreExternalUpdatesRef.current = true;
-        updateLeadStatus(movedLead.id, movedLead.columnId!, newPosition);
+        
+        updateLeadStatus(movedLead.id, movedLead.columnId!, newPosition)
+             .catch(err => {
+                console.error("Failed to update lead status:", err);
+                ignoreExternalUpdatesRef.current = false;
+             });
           
         return newOrderedLeads;
       });
