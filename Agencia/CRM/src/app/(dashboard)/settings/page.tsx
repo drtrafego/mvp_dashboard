@@ -3,8 +3,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { stackServerApp } from "@/stack";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  // In Single Tenant Mode, everyone uses the shared ID
+  const orgId = "bilder_agency_shared";
+  
+  const webhookPayload = {
+    name: "Nome do Cliente",
+    email: "cliente@email.com",
+    whatsapp: "11999999999",
+    company: "Empresa LTDA",
+    notes: "Interesse no plano premium...",
+    campaignSource: "Instagram Ads",
+    organizationId: orgId
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
       <div>
@@ -22,11 +36,11 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Nome</Label>
-              <Input id="name" defaultValue="Usuário Demo" readOnly className="bg-slate-50" />
+              <Input id="name" defaultValue={user?.displayName || "Usuário Demo"} readOnly className="bg-slate-50" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" defaultValue="demo@bilderai.com" readOnly className="bg-slate-50" />
+              <Input id="email" defaultValue={user?.primaryEmail || "demo@bilderai.com"} readOnly className="bg-slate-50" />
             </div>
           </CardContent>
           <CardFooter className="border-t p-4 bg-slate-50/50">
@@ -92,14 +106,7 @@ export default function SettingsPage() {
                         Configure sua ferramenta de automação (Zapier, n8n, Make, Typeform) para enviar uma requisição <strong>POST</strong> para a URL acima com o seguinte corpo JSON. Certifique-se de definir o cabeçalho <code>Content-Type: application/json</code>.
                     </p>
                     <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-xs overflow-x-auto relative group">
-                        <pre>{`{
-  "name": "Nome do Cliente",
-  "email": "cliente@email.com",
-  "whatsapp": "11999999999",
-  "company": "Empresa LTDA",
-  "notes": "Interesse no plano premium...",
-  "campaignSource": "Instagram Ads"
-}`}</pre>
+                        <pre className="text-green-400">{JSON.stringify(webhookPayload, null, 2)}</pre>
                          <Button 
                             variant="ghost" 
                             size="icon" 
@@ -110,7 +117,7 @@ export default function SettingsPage() {
                          </Button>
                     </div>
                     <p className="text-xs text-slate-500 pt-2">
-                        * O campo <code>name</code> e (<code>email</code> ou <code>whatsapp</code>) são obrigatórios.
+                        * O campo <code>organizationId</code> é essencial para garantir que o lead apareça no seu painel.
                     </p>
                 </div>
             </CardContent>

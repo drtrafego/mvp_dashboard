@@ -8,9 +8,9 @@ import { revalidatePath } from "next/cache";
 import { stackServerApp } from "@/stack";
 
 async function getOrgId() {
-  const user = await stackServerApp.getUser();
-  // Use the user's selected team (if any), or their own personal ID
-  return user?.selectedTeam?.id || user?.id || "org_demo_123";
+  // HARDCODED FOR SINGLE TENANT MODE
+  // This ensures ALL users see the same data (shared workspace)
+  return "bilder_agency_shared";
 }
 
 

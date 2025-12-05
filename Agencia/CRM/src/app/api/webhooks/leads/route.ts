@@ -19,8 +19,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Use a default org ID if not provided (for testing/demo)
-    const orgId = organizationId || "org_demo_123";
+    // Use the SHARED org ID regardless of input
+    // This ensures all incoming leads go to the shared workspace
+    const orgId = "bilder_agency_shared";
 
     // Find the "Novos Leads" column or the first column
     let targetColumn = await db.query.columns.findFirst({

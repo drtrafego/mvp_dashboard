@@ -6,8 +6,8 @@ import { eq, and } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const user = await stackServerApp.getUser();
-    const orgId = user?.selectedTeam?.id || user?.id || "org_demo_123";
+    // HARDCODED FOR SINGLE TENANT MODE
+    const orgId = "bilder_agency_shared";
 
     // Ensure columns exist
     const existingColumns = await db.query.columns.findMany({

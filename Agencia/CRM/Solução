@@ -1,27 +1,32 @@
-Eu entendo perfeitamente o seu cenário. O que está acontecendo é um **Desalinhamento de Estado (State Desynchronization)**.
+# Documentação da Solução Kanban e CRM
 
-**O Diagnóstico do Arquiteto:**
+Esta documentação detalha a implementação final do quadro Kanban e do sistema de CRM, abordando as correções de estado, drag-and-drop (DnD), e segurança de dados.
 
-1.  **Por que a Coluna volta?** O evento `onDragEnd` não está persistindo a nova ordem no banco (ou no estado local) corretamente. O React re-renderiza e "puxa" a ordem antiga.
-2.  **Por que o Lead volta quando move a Coluna?** Esse é o ponto crítico. O seu estado de "Colunas" e o estado de "Leads" estão brigando. Quando você move a coluna, o componente pai re-renderiza tudo baseando-se no estado inicial dos leads (que ele "lembra" ser o antigo), ignorando o movimento que você acabou de fazer no lead.
+## 1. Arquitetura Kanban Canônica (DnD-Kit)
 
-Para resolver isso, precisamos de uma implementação "Canônica" do `dnd-kit` para Kanban.
+Implementamos uma arquitetura robusta usando `@dnd-kit` para resolver problemas de "Desalinhamento de Estado" onde leads ou colunas revertiam para posições antigas após o arrasto.
 
-Aqui está a **Solução Definitiva**. Vamos reescrever o cérebro do Kanban (`board.tsx`) para gerenciar tudo em um lugar só, sem conflitos.
+### Principais Conceitos:
+*   **Single Source of Truth**: O estado local (`columns`, `leads`) é a verdade absoluta durante a interação do usuário.
+*   **Optimistic UI**: A interface é atualizada instantaneamente antes da resposta do servidor.
+*   **Separação de Responsabilidades**:
+    *   `onDragOver`: Gerencia apenas a movimentação visual dos *Leads* entre colunas.
+    *   `onDragEnd`: Gerencia a persistência no banco de dados (Server Actions) e reordenação final.
+*   **Prevenção de Race Conditions**: Utilizamos uma ref (`ignoreExternalUpdatesRef`) para ignorar atualizações vindas do servidor enquanto o usuário está arrastando itens, evitando "pulos" na interface.
+*   **Limpeza de Cache**: `router.refresh()` é chamado após atualizações críticas para garantir que o cache do Next.js (Client Router Cache) esteja sincronizado com o servidor.
 
------
+## 2. Código Fonte Final
 
-### PASSO 1: O CÉREBRO (Substitua todo o `board.tsx`)
+### `src/components/features/kanban/board.tsx` (O Cérebro)
 
-O segredo aqui é separar: `onDragOver` cuida de mover leads ENTRE colunas (visual), e `onDragEnd` cuida de SALVAR a posição final.
-
-Copie este código para `src/components/features/kanban/board.tsx`. Ele assume que você tem Server Actions (`updateLeadStatus` e `updateColumnOrder`).
+Este componente gerencia todo o estado e a lógica de arrastar.
 
 ```tsx
 "use client";
 
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -34,50 +39,75 @@ import {
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
-  defaultDropAnimationSideEffects,
-  DropAnimation,
 } from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 
-import { Column } from "./column"; // Sua coluna refatorada (sem useDroppable)
-import { LeadCard } from "./lead-card"; // Seu card
-import { Column as ColumnType, Lead } from "@/types"; // Seus tipos
+import { Column } from "./column";
+import { LeadCard } from "./lead-card";
+import { Lead, Column as ColumnType } from "@/server/db/schema";
+import { updateLeadStatus, updateColumnOrder, createColumn } from "@/server/actions/leads";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
-// 1. Configuração de Sensores (Para evitar clicks acidentais)
 const SENSORS_CONFIG = {
   activationConstraint: {
-    distance: 5, // Só começa a arrastar se mover 5px
+    distance: 5,
   },
 };
 
 interface BoardProps {
-  initialColumns: ColumnType[];
+  columns: ColumnType[];
   initialLeads: Lead[];
+  onLeadsChange?: (leads: Lead[]) => void;
 }
 
-export function Board({ initialColumns, initialLeads }: BoardProps) {
-  // Estado Local (Single Source of Truth)
+export function Board({ columns: initialColumns, initialLeads, onLeadsChange }: BoardProps) {
+  const router = useRouter();
   const [columns, setColumns] = useState<ColumnType[]>(initialColumns);
   const [leads, setLeads] = useState<Lead[]>(initialLeads);
   
-  // Item sendo arrastado no momento (para o Overlay)
   const [activeColumn, setActiveColumn] = useState<ColumnType | null>(null);
   const [activeLead, setActiveLead] = useState<Lead | null>(null);
+
+  // Add Column State
+  const [isCreateColumnOpen, setIsCreateColumnOpen] = useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
+  
+  // Ref to track local updates and prevent race conditions from server revalidation
+  const ignoreExternalUpdatesRef = useRef(false);
+
+  useEffect(() => {
+      if (ignoreExternalUpdatesRef.current) {
+          const timer = setTimeout(() => {
+              ignoreExternalUpdatesRef.current = false;
+          }, 2000); // Ignore server updates for 2s after a local move
+          return () => clearTimeout(timer);
+      }
+      setColumns(initialColumns);
+  }, [initialColumns]);
+
+  useEffect(() => {
+      if (ignoreExternalUpdatesRef.current) return;
+      setLeads(initialLeads);
+  }, [initialLeads]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, SENSORS_CONFIG),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
-  // IDs para o SortableContext
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
-
-  // --- HANDLERS ---
 
   function onDragStart(event: DragStartEvent) {
     if (event.active.data.current?.type === "Column") {
@@ -90,7 +120,6 @@ export function Board({ initialColumns, initialLeads }: BoardProps) {
     }
   }
 
-  // Cuida APENAS de mover Leads entre colunas enquanto arrasta
   function onDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
@@ -104,44 +133,42 @@ export function Board({ initialColumns, initialLeads }: BoardProps) {
 
     if (!isActiveALead) return;
 
-    // Cenário 1: Arrastando Lead sobre outro Lead
+    // Scenario 1: Dragging Lead over Lead
     if (isActiveALead && isOverALead) {
       setLeads((leads) => {
         const activeIndex = leads.findIndex((l) => l.id === activeId);
         const overIndex = leads.findIndex((l) => l.id === overId);
         
-        // Se estão na mesma coluna, o onDragEnd resolve a ordenação.
-        // Se mudou de coluna, precisamos atualizar o status visualmente AGORA.
-        if (leads[activeIndex].status !== leads[overIndex].status) {
+        if (leads[activeIndex].columnId !== leads[overIndex].columnId) {
           const newLeads = [...leads];
-          newLeads[activeIndex].status = leads[overIndex].status; // Adota o status do alvo
-          return arrayMove(newLeads, activeIndex, overIndex - 1); // Insere visualmente
+          newLeads[activeIndex].columnId = leads[overIndex].columnId; 
+          return arrayMove(newLeads, activeIndex, overIndex - 1);
         }
-        return leads; // Deixa o arrayMove pro DragEnd se for mesma coluna
+        return leads;
       });
     }
 
-    // Cenário 2: Arrastando Lead sobre uma Coluna VAZIA (ou o header da coluna)
+    // Scenario 2: Dragging Lead over Column (empty or header)
     if (isActiveALead && isOverAColumn) {
       setLeads((leads) => {
         const activeIndex = leads.findIndex((l) => l.id === activeId);
         const activeLead = leads[activeIndex];
         
-        // Se o lead já está nessa coluna, não faz nada
-        if (activeLead.status === overId) return leads;
+        if (activeLead.columnId === overId) return leads;
 
-        // Se não, muda o status dele para a nova coluna
         const newLeads = [...leads];
-        newLeads[activeIndex].status = overId as string; // Assume ID da coluna como Status
-        return arrayMove(newLeads, activeIndex, activeIndex); // Mantém posição, muda status
+        newLeads[activeIndex].columnId = overId as string;
+        return arrayMove(newLeads, activeIndex, activeIndex);
       });
     }
   }
 
-  // Cuida de FINALIZAR a ação (Salvar no Banco)
+  const [lastError, setLastError] = useState<string | null>(null);
+
   function onDragEnd(event: DragEndEvent) {
     setActiveColumn(null);
     setActiveLead(null);
+    setLastError(null);
 
     const { active, over } = event;
     if (!over) return;
@@ -149,7 +176,7 @@ export function Board({ initialColumns, initialLeads }: BoardProps) {
     const activeId = active.id;
     const overId = over.id;
 
-    // === MOVENDO COLUNAS ===
+    // Moving Columns
     if (active.data.current?.type === "Column") {
       if (activeId !== overId) {
         setColumns((columns) => {
@@ -157,98 +184,80 @@ export function Board({ initialColumns, initialLeads }: BoardProps) {
           const newIndex = columns.findIndex((col) => col.id === overId);
           const newOrder = arrayMove(columns, oldIndex, newIndex);
           
-          // TODO: Chamar Server Action para salvar ordem das colunas
-          // updateColumnOrder(newOrder); 
+          ignoreExternalUpdatesRef.current = true;
+          
+          updateColumnOrder(newOrder.map(c => c.id))
+            .then((response) => {
+                if (response.columns) {
+                    setColumns(response.columns);
+                    router.refresh();
+                }
+            })
+            .catch(err => {
+                setLastError(`Erro ao salvar ordem das colunas: ${err.message}`);
+                ignoreExternalUpdatesRef.current = false;
+            });
+
           return newOrder;
         });
       }
       return;
     }
 
-    // === MOVENDO LEADS (Drop Final) ===
+    // Moving Leads
     if (active.data.current?.type === "Lead") {
-      // O onDragOver já cuidou de mudar o status visualmente.
-      // Aqui nós apenas consolidamos a ordem final dentro da coluna.
-      
       setLeads((leads) => {
         const activeIndex = leads.findIndex((l) => l.id === activeId);
         const overIndex = leads.findIndex((l) => l.id === overId);
         
-        if (activeIndex !== overIndex) {
-          const newOrderedLeads = arrayMove(leads, activeIndex, overIndex);
-          
-          // TODO: Chamar Server Action para salvar TUDO (novo status e nova posição)
-          // const movedLead = newOrderedLeads[overIndex];
-          // updateLeadStatusAndPosition(movedLead.id, movedLead.status, overIndex);
-          
-          return newOrderedLeads;
+        const newOrderedLeads = arrayMove(leads, activeIndex, overIndex);
+        const movedLead = newOrderedLeads[overIndex];
+        
+        const columnLeads = newOrderedLeads.filter(l => l.columnId === movedLead.columnId);
+        const newPosition = columnLeads.findIndex(l => l.id === movedLead.id);
+        
+        ignoreExternalUpdatesRef.current = true;
+        
+        if (onLeadsChange) {
+            onLeadsChange(newOrderedLeads);
         }
-        return leads;
+        
+        updateLeadStatus(movedLead.id, movedLead.columnId!, newPosition)
+             .catch(err => {
+                setLastError(`Erro ao salvar status do lead: ${err.message}`);
+                ignoreExternalUpdatesRef.current = false;
+             });
+          
+        return newOrderedLeads;
       });
     }
   }
-
-  // Filtra leads por coluna para passar pro componente filho
+  
   const getLeadsByColumn = (columnId: string) => {
-    return leads.filter((lead) => lead.status === columnId);
+    return leads.filter((lead) => lead.columnId === columnId);
   };
 
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
-    >
-      <div className="flex gap-4 h-full overflow-x-auto p-4 items-start">
-        <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
-          {columns.map((col) => (
-            <Column 
-                key={col.id} 
-                column={col} 
-                leads={getLeadsByColumn(col.id)} 
-            />
-          ))}
-        </SortableContext>
-      </div>
-
-      {/* OVERLAY: O "Fantasma" que segue o mouse */}
-      {createPortal(
-        <DragOverlay>
-          {activeColumn && (
-             <div className="opacity-80 rotate-2 cursor-grabbing">
-                {/* Renderiza uma versão simplificada da coluna arrastada */}
-                <Column column={activeColumn} leads={getLeadsByColumn(activeColumn.id)} />
-             </div>
-          )}
-          {activeLead && (
-             <div className="opacity-80 rotate-2 cursor-grabbing">
-                 <LeadCard lead={activeLead} />
-             </div>
-          )}
-        </DragOverlay>,
-        document.body
-      )}
-    </DndContext>
-  );
+  // ... (handleCreateColumn e JSX de renderização)
 }
 ```
 
------
+### `src/components/features/kanban/column.tsx` (A Coluna Otimizada)
 
-### PASSO 2: A COLUNA (Simplificação Radical)
-
-No arquivo `column.tsx`, **remova** qualquer menção a `useDroppable`. O `useSortable` já faz tudo.
+Mudanças principais:
+*   Remoção do `useDroppable` (conflitava com IDs de leads).
+*   `min-h-[150px]` para permitir drop em colunas vazias.
+*   `{...attributes} {...listeners}` aplicados APENAS no cabeçalho da coluna (impede arrastar a coluna ao tentar selecionar texto ou clicar num lead).
 
 ```tsx
-// src/components/features/kanban/column.tsx
+"use client";
+
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { LeadCard } from "./lead-card";
 import { cn } from "@/lib/utils";
-import { Column as ColumnType, Lead } from "@/types";
+import { Column as ColumnType, Lead } from "@/server/db/schema";
+// ... imports
 
 interface ColumnProps {
   column: ColumnType;
@@ -275,39 +284,76 @@ export function Column({ column, leads }: ColumnProps) {
 
   const leadsIds = useMemo(() => leads.map((l) => l.id), [leads]);
 
+  // ... states de edição
+
   if (isDragging) {
     return (
       <div
         ref={setNodeRef}
         style={style}
-        className="w-[300px] h-[500px] bg-slate-100/50 border-2 border-dashed border-slate-300 rounded-xl"
+        className="w-[300px] min-w-[300px] h-[500px] bg-slate-100/50 border-2 border-dashed border-slate-300 rounded-xl opacity-50"
       />
     );
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="w-[300px] flex flex-col gap-2">
-      {/* Header: Só aqui tem os listeners de arrastar a COLUNA */}
+    <div 
+        ref={setNodeRef} 
+        style={style} 
+        className="w-[300px] min-w-[300px] flex flex-col h-full bg-slate-100/80 rounded-xl border border-slate-200/60"
+    >
+      {/* Header: Drag Handle Aqui */}
       <div
         {...attributes}
         {...listeners}
-        className="bg-slate-100 p-3 rounded-xl flex justify-between items-center cursor-grab active:cursor-grabbing border border-slate-200"
+        className="p-3 pb-2 flex items-center justify-between group cursor-grab active:cursor-grabbing touch-none"
       >
-        <h3 className="font-semibold text-slate-700">{column.title}</h3>
-        <span className="text-xs bg-white px-2 py-1 rounded text-slate-500 border border-slate-100">
-          {leads.length}
-        </span>
+         {/* ... Conteúdo do Header */}
       </div>
 
-      {/* Área dos Cards: Contexto Vertical */}
-      <div className="bg-slate-50/50 p-2 rounded-xl border border-slate-100 min-h-[150px] flex flex-col gap-2">
-        <SortableContext items={leadsIds} strategy={verticalListSortingStrategy}>
-          {leads.map((lead) => (
-            <LeadCard key={lead.id} lead={lead} />
-          ))}
-        </SortableContext>
+      {/* Cards Area: Área de Drop dos Leads */}
+      <div className="flex-1 p-2 overflow-hidden">
+        <div className="h-full pr-3 overflow-y-auto custom-scrollbar min-h-[150px]">
+            <SortableContext items={leadsIds} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-3 pb-4">
+                    {leads.map((lead) => (
+                        <LeadCard key={lead.id} lead={lead} />
+                    ))}
+                </div>
+            </SortableContext>
+        </div>
       </div>
     </div>
   );
 }
 ```
+
+## 3. Segurança e Dados (Single Tenant - Compartilhado)
+
+**MUDANÇA IMPORTANTE**: O sistema foi configurado para **Modo Compartilhado (Single Tenant)**.
+Isso significa que a segregação de dados por usuário foi removida para atender ao requisito de que toda a equipe veja a mesma tela.
+
+### Como funciona agora:
+1.  **ID Compartilhado**: Todos os usuários, webhooks e operações usam um ID fixo: `bilder_agency_shared`.
+2.  **Visibilidade Global**: Qualquer pessoa que fizer login no sistema verá os mesmos leads e colunas.
+3.  **Webhooks**: Não é mais necessário enviar o `organizationId` no payload do webhook, pois o sistema força o uso do ID compartilhado.
+
+### Código de Integração (Webhook) Atualizado
+Para integrar com Zapier, n8n ou formulários, envie um POST para:
+`https://seu-crm.com/api/webhooks/leads`
+
+**Payload JSON (Simplificado):**
+```json
+{
+  "name": "Nome do Cliente",
+  "email": "cliente@email.com",
+  "whatsapp": "11999999999",
+  "company": "Empresa LTDA",
+  "notes": "Interesse no plano premium...",
+  "campaignSource": "Instagram Ads"
+}
+```
+*Nota: O campo `organizationId` é ignorado e atribuído automaticamente para o ambiente compartilhado.*
+
+### Atenção
+Como todos compartilham o mesmo ambiente, **qualquer pessoa que criar uma conta no link do seu CRM terá acesso aos dados**. Certifique-se de controlar quem tem acesso ao link de cadastro ou gerenciar os usuários no painel do Stack Auth.

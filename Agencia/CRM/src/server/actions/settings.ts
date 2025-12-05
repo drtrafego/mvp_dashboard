@@ -8,13 +8,13 @@ import { revalidatePath } from "next/cache";
 import { stackServerApp } from "@/stack";
 
 async function getOrgId() {
-  const user = await stackServerApp.getUser();
-  return user?.selectedTeam?.id || user?.id || "org_demo_123";
+  // HARDCODED FOR SINGLE TENANT MODE
+  return "bilder_agency_shared";
 }
 
 export async function getSettings() {
   const user = await stackServerApp.getUser();
-  const orgId = user?.selectedTeam?.id || user?.id || "org_demo_123";
+  const orgId = "bilder_agency_shared"; // HARDCODED FOR SINGLE TENANT MODE
   const email = user?.primaryEmail || "";
 
   const existing = await db.query.settings.findFirst({
