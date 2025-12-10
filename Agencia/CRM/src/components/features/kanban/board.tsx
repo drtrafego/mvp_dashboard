@@ -166,9 +166,9 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange }: 
           
           // Call server action and handle potential errors
           updateColumnOrder(newOrder.map(c => c.id))
-            .then((response) => {
+            .then((response: any) => {
                 console.log("[Board] Column order saved successfully");
-                if (response.columns) {
+                if (response?.columns) {
                     // Authoritatively update local state with server-verified order
                     setColumns(response.columns);
                     // Force router refresh to clear Next.js client router cache
