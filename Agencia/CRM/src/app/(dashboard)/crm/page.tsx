@@ -14,7 +14,7 @@ export default async function CRMPage() {
   return (
     <div className="h-[calc(100vh-100px)]">
       <CrmView 
-        initialLeads={leads} 
+        initialLeads={leads as any[]} 
         columns={columns} 
         companyName={settings?.companyName} 
         initialViewMode={settings?.viewMode || 'kanban'}
