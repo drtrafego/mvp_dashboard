@@ -203,7 +203,7 @@ export async function deleteColumn(id: string) {
     if (!columnToDelete) return; // Already deleted
 
     // Find a fallback column in the canonical list
-    let fallbackCol = uniqueColumns
+    let fallbackCol: any = uniqueColumns
         .filter(c => c.id !== id && c.order < columnToDelete.order)
         .sort((a, b) => b.order - a.order)[0]; // Closest predecessor
 
