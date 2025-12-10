@@ -23,18 +23,15 @@ export async function POST(request: Request) {
     // This ensures all incoming leads go to the shared workspace
     const orgId = "bilder_agency_shared";
 
-    // Find the "Novos Leads" column or the first column
+    // Find ANY "Novos Leads" column regardless of organization
+    // Since we are in Single Tenant Shared Mode, we accept any column.
     let targetColumn = await db.query.columns.findFirst({
-      where: (cols, { eq, and }) => and(
-        eq(cols.organizationId, orgId),
-        eq(cols.title, "Novos Leads")
-      ),
+      where: (cols, { eq }) => eq(cols.title, "Novos Leads"),
     });
 
     if (!targetColumn) {
-      // Fallback to first column by order
+      // Fallback to ANY first column by order
       targetColumn = await db.query.columns.findFirst({
-        where: eq(columns.organizationId, orgId),
         orderBy: [asc(columns.order)],
       });
     }

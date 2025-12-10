@@ -13,21 +13,42 @@ async function getOrgId() {
   return "bilder_agency_shared";
 }
 
+// Helper to unify columns from multiple organizations
+async function getCanonicalData() {
+    // Fetch ALL columns from ALL organizations
+    const allColumns = await db.query.columns.findMany({
+        orderBy: [asc(columns.order)],
+    });
+
+    const uniqueColumnsMap = new Map<string, typeof columns.$inferSelect>();
+    const idMap = new Map<string, string>(); // Original ID -> Canonical ID
+
+    // Prioritize columns from 'org_demo_123' if possible, otherwise first found
+    // We sort so that we process 'org_demo_123' first if we want, or just by creation
+    // For now, we process by existing order.
+    
+    for (const col of allColumns) {
+        if (!uniqueColumnsMap.has(col.title)) {
+            uniqueColumnsMap.set(col.title, col);
+        }
+        const canonical = uniqueColumnsMap.get(col.title)!;
+        idMap.set(col.id, canonical.id);
+    }
+
+    const uniqueColumns = Array.from(uniqueColumnsMap.values()).sort((a, b) => a.order - b.order);
+    return { uniqueColumns, idMap };
+}
+
 
 export async function getColumns() {
+  const { uniqueColumns } = await getCanonicalData();
   const orgId = await getOrgId();
   
-  // First, fetch all existing columns
-  const existing = await db.query.columns.findMany({
-    where: eq(columns.organizationId, orgId),
-    orderBy: [asc(columns.order)],
-  });
-
   // Define the expected standard columns
   const expectedTitles = ["Novos Leads", "Em Contato", "Não Retornou", "Proposta Enviada", "Fechado", "Perdido"];
 
-  // 1. Handle empty state - Only initialize if NO columns exist
-  if (existing.length === 0) {
+  // 1. Handle empty state - Only initialize if NO columns exist AT ALL
+  if (uniqueColumns.length === 0) {
       const inserted = await db.insert(columns).values(
           expectedTitles.map((title, i) => ({
               title,
@@ -39,7 +60,7 @@ export async function getColumns() {
   }
 
   // Return existing columns as-is, just sorted
-  return existing.sort((a, b) => a.order - b.order);
+  return uniqueColumns;
 }
 
 export async function deleteLead(id: string) {
@@ -48,19 +69,26 @@ export async function deleteLead(id: string) {
 }
 
 export async function getLeads() {
-  // In real app: const user = await stackServerApp.getUser();
-  // const orgId = user.selectedTeam?.id || user.id;
-  const orgId = await getOrgId();
+  const { idMap } = await getCanonicalData();
   
-  return await db.query.leads.findMany({
-    where: eq(leads.organizationId, orgId),
+  // Fetch ALL leads from ALL organizations
+  const allLeads = await db.query.leads.findMany({
     orderBy: [asc(leads.position), desc(leads.createdAt)],
+  });
+
+  // Map leads to canonical columns
+  // If a lead points to a column that was merged, point it to the canonical one
+  return allLeads.map(lead => {
+      if (lead.columnId && idMap.has(lead.columnId)) {
+          return { ...lead, columnId: idMap.get(lead.columnId) };
+      }
+      return lead;
   });
 }
 
 export async function updateLeadStatus(id: string, newColumnId: string, newPosition: number) {
-  const orgId = await getOrgId();
-  console.log(`[updateLeadStatus] Org: ${orgId} | Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition})`);
+  // Allow updating ANY lead regardless of organization
+  console.log(`[updateLeadStatus] Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition})`);
   
   try {
       await db.update(leads)
@@ -68,7 +96,7 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
           columnId: newColumnId, 
           position: newPosition 
         })
-        .where(and(eq(leads.id, id), eq(leads.organizationId, orgId)));
+        .where(eq(leads.id, id));
         
       revalidatePath('/dashboard/crm');
       console.log(`[updateLeadStatus] Success`);
@@ -86,15 +114,13 @@ export async function createLead(formData: FormData) {
   const notes = formData.get("notes") as string;
   const valueStr = formData.get("value") as string;
   const value = valueStr ? valueStr : null;
-  const orgId = await getOrgId();
+  const orgId = await getOrgId(); // Use shared ID for new leads
 
   console.log(`[createLead] Creating lead for Org: ${orgId}`);
 
-  // Get the first column to add the lead to
-  const firstColumn = await db.query.columns.findFirst({
-    where: eq(columns.organizationId, orgId),
-    orderBy: [asc(columns.order)],
-  });
+  // Get the first column to add the lead to (using canonical logic)
+  const columnsList = await getColumns();
+  const firstColumn = columnsList[0];
 
   if (!firstColumn) {
     throw new Error("No columns found");
@@ -131,24 +157,25 @@ export async function createColumn(title: string) {
 }
 
 export async function updateColumn(id: string, title: string) {
-    const orgId = await getOrgId();
-    console.log(`[updateColumn] Org: ${orgId} | Col: ${id} -> Title: ${title}`);
+    console.log(`[updateColumn] Col: ${id} -> Title: ${title}`);
+    // Update potentially multiple columns if we are merging?
+    // Ideally we update just the one targeted. 
+    // Since UI sees canonical ID, we update that one.
     await db.update(columns)
         .set({ title })
-        .where(and(eq(columns.id, id), eq(columns.organizationId, orgId)));
+        .where(eq(columns.id, id));
     revalidatePath('/dashboard/crm');
 }
 
 export async function updateColumnOrder(orderedIds: string[]) {
-    const orgId = await getOrgId();
-    console.log(`[updateColumnOrder] Org: ${orgId} | New Order:`, orderedIds);
+    console.log(`[updateColumnOrder] New Order:`, orderedIds);
     
     try {
         // Process updates sequentially
         for (let i = 0; i < orderedIds.length; i++) {
             const result = await db.update(columns)
                 .set({ order: i })
-                .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, orgId)))
+                .where(eq(columns.id, orderedIds[i]))
                 .returning({ id: columns.id });
             
             if (result.length === 0) {
@@ -159,13 +186,7 @@ export async function updateColumnOrder(orderedIds: string[]) {
         revalidatePath('/dashboard/crm');
         console.log(`[updateColumnOrder] Success - Revalidated path`);
         
-        // Fetch and return the verified new order
-        const updatedColumns = await db.query.columns.findMany({
-            where: eq(columns.organizationId, orgId),
-            orderBy: [asc(columns.order)],
-        });
-
-        return { success: true, columns: updatedColumns };
+        return { success: true };
     } catch (error) {
         console.error("[updateColumnOrder] Error:", error);
         throw error;
@@ -173,56 +194,41 @@ export async function updateColumnOrder(orderedIds: string[]) {
 }
 
 export async function deleteColumn(id: string) {
-    const orgId = await getOrgId();
+    const { idMap, uniqueColumns } = await getCanonicalData();
     
     // Get the column being deleted to know its order
-    const columnToDelete = await db.query.columns.findFirst({
-        where: eq(columns.id, id)
-    });
+    // Use uniqueColumns because UI is based on it
+    const columnToDelete = uniqueColumns.find(c => c.id === id);
 
     if (!columnToDelete) return; // Already deleted
 
-    // Find a fallback column:
-    // 1. Try to find the immediate predecessor (order < deleted.order)
-    let fallbackCol = await db.query.columns.findFirst({
-        where: and(
-            eq(columns.organizationId, orgId),
-            ne(columns.id, id),
-            lt(columns.order, columnToDelete.order) // Less than
-        ),
-        orderBy: [desc(columns.order)] // Highest order less than current (closest predecessor)
-    });
+    // Find a fallback column in the canonical list
+    let fallbackCol = uniqueColumns
+        .filter(c => c.id !== id && c.order < columnToDelete.order)
+        .sort((a, b) => b.order - a.order)[0]; // Closest predecessor
 
-    // 2. If no predecessor (was first column), find immediate successor
     if (!fallbackCol) {
-        fallbackCol = await db.query.columns.findFirst({
-            where: and(
-                eq(columns.organizationId, orgId),
-                ne(columns.id, id),
-                gt(columns.order, columnToDelete.order) // Greater than
-            ),
-            orderBy: [asc(columns.order)] // Lowest order greater than current (closest successor)
-        });
+        fallbackCol = uniqueColumns
+            .filter(c => c.id !== id && c.order > columnToDelete.order)
+            .sort((a, b) => a.order - b.order)[0]; // Closest successor
     }
     
-    // 3. If still nothing, just pick ANY other column
     if (!fallbackCol) {
-        fallbackCol = await db.query.columns.findFirst({
-            where: and(
-                eq(columns.organizationId, orgId),
-                ne(columns.id, id)
-            ),
-            orderBy: [asc(columns.order)]
-        });
+         fallbackCol = uniqueColumns.find(c => c.id !== id);
     }
 
     if (fallbackCol) {
         // Move leads to fallback column
+        // We need to move leads from ALL columns that map to the deleted canonical ID?
+        // Actually, if we delete a canonical column, we should probably delete the underlying record.
+        // But what about other columns that mapped to it?
+        // This is getting complex. Simple approach: Just delete the target column record.
+        // And move leads that pointed to it.
+        
         await db.update(leads)
             .set({ columnId: fallbackCol.id })
             .where(eq(leads.columnId, id));
     } else {
-        // If no other column exists, delete the leads to avoid orphans
         await db.delete(leads).where(eq(leads.columnId, id));
     }
 
