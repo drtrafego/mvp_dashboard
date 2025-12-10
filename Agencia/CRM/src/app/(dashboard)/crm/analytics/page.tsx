@@ -24,7 +24,7 @@ export default async function AnalyticsPage() {
       return title.includes("fechado") || title.includes("won") || title.includes("ganho");
   });
 
-  const wonLeads = fechadoColumn 
+barra de   const wonLeads = fechadoColumn 
     ? leads.filter((l: any) => l.columnId === fechadoColumn.id)
     : [];
     

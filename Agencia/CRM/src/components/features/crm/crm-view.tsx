@@ -182,7 +182,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode }:
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   return (
-    <div className="flex flex-col gap-6 h-full">
+    <div className="flex flex-col gap-6">
       <CompanyOnboarding hasCompanyName={!!companyName} />
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -271,11 +271,11 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode }:
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 min-h-0 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
          {view === "board" ? (
              <Board initialLeads={filteredLeads} columns={columns} onLeadsChange={handleLeadsChange} />
          ) : (
-             <div className="p-4 h-full overflow-y-auto">
+             <div className="p-4">
                 <LeadsList leads={filteredLeads} columns={columns} />
              </div>
          )}

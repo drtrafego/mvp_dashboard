@@ -248,7 +248,7 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange }: 
                   </span>
               </div>
           )}
-          <div className="flex gap-4 h-full overflow-x-auto p-4 items-start">
+          <div className="flex gap-4 overflow-x-auto p-4 items-start">
             <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
               {columns.map((col) => (
                 <Column 
