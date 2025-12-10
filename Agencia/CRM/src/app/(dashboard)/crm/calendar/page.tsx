@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 export const dynamic = 'force-dynamic';
 
 export default async function CalendarPage() {
-  const leads: Lead[] = await getLeads();
+  const leads: any[] = await getLeads();
   
   const today = new Date();
   const monthStart = startOfMonth(today);
@@ -47,7 +47,7 @@ export default async function CalendarPage() {
         {/* Days Grid */}
         <div className="flex-1 grid grid-cols-7 auto-rows-fr overflow-y-auto">
           {days.map((day: Date, dayIdx: number) => {
-              const dayLeads = leads.filter((l: Lead) => isSameDay(new Date(l.createdAt), day));
+              const dayLeads = leads.filter((l: any) => isSameDay(new Date(l.createdAt), day));
               const isCurrentMonth = isSameMonth(day, monthStart);
 
               return (
