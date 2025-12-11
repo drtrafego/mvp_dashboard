@@ -8,11 +8,18 @@ import { stackServerApp } from "@/stack";
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  let user;
+  let user = null;
   try {
-    user = await stackServerApp.getUser();
+    // Only attempt to fetch user if stack keys are present
+    const hasStackKeys = !!process.env.NEXT_PUBLIC_STACK_PROJECT_ID && !!process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY;
+    if (hasStackKeys) {
+        user = await stackServerApp.getUser().catch((e: any) => {
+            console.error("Stack getUser failed:", e);
+            return null;
+        });
+    }
   } catch (error) {
-    console.error("Error fetching user in SettingsPage:", error);
+    console.error("Error in SettingsPage initialization:", error);
     user = null;
   }
   

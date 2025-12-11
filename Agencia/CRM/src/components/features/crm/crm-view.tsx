@@ -237,7 +237,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode }:
           </Button>
 
           {stackEnabled && (
-            <div className="hidden sm:block relative z-50">
+            <div className="hidden sm:block relative z-[9999] isolate">
               <UserButton />
             </div>
           )}

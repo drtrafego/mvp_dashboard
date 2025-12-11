@@ -91,9 +91,21 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
   console.log(`[updateLeadStatus] Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition})`);
   
   try {
+      // 1. Get Canonical Data to ensure we have the correct target column ID
+      const { idMap } = await getCanonicalData();
+      
+      // If the incoming newColumnId is one of the "merged" ones, we should use the canonical one
+      // However, usually the UI should already be using the canonical one if we set it up right.
+      // But let's double check:
+      let targetColumnId = newColumnId;
+      if (idMap.has(newColumnId)) {
+          targetColumnId = idMap.get(newColumnId)!;
+          console.log(`[updateLeadStatus] Remapped column ${newColumnId} -> ${targetColumnId}`);
+      }
+
       await db.update(leads)
         .set({ 
-          columnId: newColumnId, 
+          columnId: targetColumnId, 
           position: newPosition 
         })
         .where(eq(leads.id, id));
