@@ -211,7 +211,7 @@ function shouldTransition(stage: StageConfig, variables: Record<string, unknown>
 function generateMockResponse(
     stage: StageConfig | undefined,
     variables: Record<string, unknown>,
-    messageCount: number
+    _messageCount: number
 ): string {
     if (!stage) {
         return 'Olá! Como posso ajudá-lo hoje?';
