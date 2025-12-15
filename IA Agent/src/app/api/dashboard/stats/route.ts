@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { agents, threads, messages } from '@/db/schema';
-import { sql, eq, count } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 
 /**
  * GET /api/dashboard/stats - Estatísticas do dashboard
