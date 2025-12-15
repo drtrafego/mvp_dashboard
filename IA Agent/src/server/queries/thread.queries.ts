@@ -6,7 +6,7 @@
 
 import { db } from '@/lib/db';
 import { threads, messages } from '@/db/schema';
-import { eq, desc, and, lt, count } from 'drizzle-orm';
+import { eq, desc, and, lt } from 'drizzle-orm';
 import type { ThreadStatus } from '@/db/schema';
 
 /**
