@@ -57,6 +57,8 @@ export default function IntegrationsPage() {
             const timer = setTimeout(() => setNotification(null), 5000);
             return () => clearTimeout(timer);
         }
+
+        return undefined;
     }, [searchParams]);
 
     const integrations: Integration[] = [
@@ -108,8 +110,8 @@ export default function IntegrationsPage() {
                 {notification && (
                     <div
                         className={`mb-6 flex items-center gap-3 rounded-xl p-4 ${notification.type === 'success'
-                                ? 'bg-emerald-50 text-emerald-800'
-                                : 'bg-red-50 text-red-800'
+                            ? 'bg-emerald-50 text-emerald-800'
+                            : 'bg-red-50 text-red-800'
                             }`}
                     >
                         {notification.type === 'success' ? (

@@ -4,7 +4,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-Agent,
+import type {
+    Agent,
     KnowledgeBaseItem,
     Thread,
     Message,

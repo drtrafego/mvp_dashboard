@@ -2,7 +2,7 @@
 
 import { Header, PageWrapper, PageSection } from '@/components/layout';
 import { Button, Badge } from '@/components/ui';
-import { Plus, BookOpen, MoreVertical, Edit, Trash2, GripVertical } from 'lucide-react';
+import { Plus, BookOpen, Edit, Trash2, GripVertical } from 'lucide-react';
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
