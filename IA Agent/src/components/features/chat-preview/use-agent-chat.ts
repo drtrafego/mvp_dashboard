@@ -52,7 +52,7 @@ export function useAgentChat(options: UseAgentChatOptions): UseAgentChatReturn {
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [isPending, startTransition] = useTransition();
+    const [isPending] = useTransition();
     const [isLoading, setIsLoading] = useState(false);
 
     /**
@@ -166,8 +166,16 @@ export function useAgentChat(options: UseAgentChatOptions): UseAgentChatReturn {
         if (lastUserMessage) {
             // Remove a última resposta com erro
             setMessages(prev => {
-                const lastAssistantIndex = prev.findLastIndex(m => m.role === 'assistant');
-                if (lastAssistantIndex > -1 && prev[lastAssistantIndex].error) {
+                // Encontra a última mensagem do assistente manualmente para compatibilidade
+                let lastAssistantIndex = -1;
+                for (let i = prev.length - 1; i >= 0; i--) {
+                    if (prev[i].role === 'assistant') {
+                        lastAssistantIndex = i;
+                        break;
+                    }
+                }
+
+                if (lastAssistantIndex > -1 && prev[lastAssistantIndex]?.error) {
                     return prev.slice(0, lastAssistantIndex);
                 }
                 return prev;

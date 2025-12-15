@@ -147,6 +147,10 @@ export async function toggleKnowledgeStatusAction(knowledgeId: string) {
             .where(eq(knowledgeBase.id, knowledgeId))
             .returning();
 
+        if (!updated) {
+            return { success: false, error: 'Erro ao atualizar status' };
+        }
+
         revalidatePath('/dashboard/knowledge');
 
         return { success: true, isActive: updated.isActive };
