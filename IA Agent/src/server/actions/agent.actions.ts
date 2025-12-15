@@ -168,6 +168,10 @@ export async function toggleAgentStatusAction(agentId: string) {
             .where(eq(agents.id, agentId))
             .returning();
 
+        if (!updated) {
+            return { success: false, error: 'Erro ao alterar status' };
+        }
+
         // Revalidar cache
         revalidatePath('/dashboard/agents');
 

@@ -1,0 +1,2 @@
+src/components/features/chat-preview/use-agent-chat.ts(172,25): error TS2532: Object is possibly 'undefined'.
+src/server/actions/agent.actions.ts(174,43): error TS18048: 'updated' is possibly 'undefined'.
