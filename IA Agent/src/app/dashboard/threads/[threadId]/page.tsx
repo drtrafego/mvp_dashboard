@@ -90,8 +90,8 @@ export default function ThreadDetailPage() {
                             Voltar
                         </Button>
                     </Link>
-                    <Badge variant={statusConfig[mockThread.status].variant}>
-                        {statusConfig[mockThread.status].label}
+                    <Badge variant={statusConfig[mockThread.status]?.variant || 'default'}>
+                        {statusConfig[mockThread.status]?.label || mockThread.status}
                     </Badge>
                     <TakeoverBadge isHumanTakeover={isHumanTakeover} />
                 </div>
