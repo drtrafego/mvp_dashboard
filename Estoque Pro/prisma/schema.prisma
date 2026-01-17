@@ -1,0 +1,343 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================
+// ENUMS
+// ==============================
+
+enum Role {
+  SUPER_ADMIN  // Proprietário do sistema (acesso a tudo)
+  ADMIN        // Dono da empresa (cliente que comprou)
+  STAFF        // Funcionário da empresa
+}
+
+enum PurchaseRequestStatus {
+  DRAFT
+  SENT
+  RECEIVED
+  CANCELLED
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum BusinessType {
+  VAREJO_GERAL    // Loja genérica, sem variantes
+  VESTUARIO       // Roupas, calçados - usa variantes
+}
+
+// ==============================
+// MULTI-TENANT: ORGANIZATION
+// ==============================
+
+model Organization {
+  id            String       @id @default(cuid())
+  name          String       // Nome da empresa
+  slug          String       @unique // URL amigável: /org/empresa-xyz
+  plan          Plan         @default(FREE)
+  businessType  BusinessType @default(VAREJO_GERAL)
+  isActive      Boolean      @default(true)
+  
+  // Limites do plano
+  maxUsers    Int      @default(6)
+  maxProducts Int      @default(100)
+  
+  // Relacionamentos
+  users              User[]
+  categories         Category[]
+  products           Product[]
+  settings           Settings?
+  customColumns      CustomColumn[]
+  stockLogs          StockLog[]
+  purchaseRequests   PurchaseRequest[]
+  variantAttributes  VariantAttribute[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Stripe Subscription
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  subscriptionStatus     String?   // "active", "past_due", "canceled", "incomplete", "trialing"
+  subscriptionExpiresAt  DateTime? // Data de expiração ou renovação
+}
+
+// ==============================
+// USER (Atualizado para Privy + Multi-tenant)
+// ==============================
+
+model User {
+  id            String   @id @default(cuid())
+  privyId       String   @unique  // ID do Privy (did:privy:...)
+  email         String   @unique
+  name          String?
+  role          Role     @default(STAFF)
+  phone         String?
+  position      String?  // Cargo
+  image         String?  // Foto do perfil
+  isActive      Boolean  @default(true) // Status do usuário (Ativo/Inativo)
+  
+  // Password fields
+  passwordHash          String?   // Senha hash (bcrypt)
+  tempPasswordExpiresAt DateTime? // Expira em 14 dias - se não trocar, vira definitiva
+  passwordChangedAt     DateTime? // Data da última troca de senha
+  
+  // Vinculo à empresa (null apenas para SUPER_ADMIN)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?
+  
+  // Relacionamentos
+  stockLogs        StockLog[]
+  products         Product[]
+  purchaseRequests PurchaseRequest[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ==============================
+// CATEGORY (Multi-tenant)
+// ==============================
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  products  Product[]
+  
+  // Multi-tenant
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@index([organizationId])
+}
+
+// ==============================
+// PRODUCT (Multi-tenant)
+// ==============================
+
+model Product {
+  id           String    @id @default(cuid())
+  name         String
+  unit         String    // kg, g, L, un
+  minStock     Float     // Estoque minimo
+  currentStock Float     // Quantidade atual
+  unitPrice    Float?    // Valor unitário R$
+  expiresAt    DateTime? // Validade
+  lastCountAt  DateTime  @default(now()) // Data da contagem
+  customData   Json?     // Dados das colunas personalizadas { "colId": "value" }
+  
+  // Suporte a variantes (Vestuário)
+  hasVariants  Boolean   @default(false)
+  variants     ProductVariant[]
+
+  category     Category  @relation(fields: [categoryId], references: [id])
+  categoryId   String
+
+  lastUpdatedBy   User?    @relation(fields: [lastUpdatedById], references: [id])
+  lastUpdatedById String?
+
+  // Multi-tenant
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  logs                 StockLog[]
+  purchaseRequestItems PurchaseRequestItem[]
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@index([organizationId])
+}
+
+// ==============================
+// STOCK LOG (Multi-tenant)
+// ==============================
+
+model StockLog {
+  id            String   @id @default(cuid())
+  previousStock Float    // Estoque anterior
+  newStock      Float    // Novo estoque
+  action        String   // "UPDATE", "CREATE", "DELETE"
+  responsible   String   // Nome do responsável
+  
+  product       Product  @relation(fields: [productId], references: [id])
+  productId     String
+
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+
+  // Multi-tenant
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  createdAt     DateTime @default(now())
+  
+  @@index([organizationId])
+}
+
+// ==============================
+// CUSTOM COLUMN (Multi-tenant)
+// ==============================
+
+model CustomColumn {
+  id        String   @id @default(cuid())
+  name      String
+  
+  // Multi-tenant
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  
+  createdAt DateTime @default(now())
+  
+  @@index([organizationId])
+}
+
+// ==============================
+// SETTINGS (Multi-tenant - 1 per organization)
+// ==============================
+
+model Settings {
+  id                 String  @id @default(cuid())
+  companyName        String  @default("Minha Empresa")
+  companyEmail       String? // Email da empresa
+  ownerName          String  @default("Admin")
+  expiryWarningDays  Int     @default(2)
+  lowStockThreshold  Float   @default(0.10) // 10%
+  theme              String  @default("system")
+  
+  // Multi-tenant (1:1 com Organization)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @unique
+}
+
+// ==============================
+// REQUISIÇÃO DE COMPRA (Multi-tenant)
+// ==============================
+
+model PurchaseRequest {
+  id             String                @id @default(cuid())
+  status         PurchaseRequestStatus @default(DRAFT)
+  supplier       String?               // Nome do fornecedor
+  notes          String?               // Observações
+  
+  items          PurchaseRequestItem[]
+  
+  createdBy      User     @relation(fields: [createdById], references: [id])
+  createdById    String
+  
+  // Multi-tenant
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+  
+  createdAt      DateTime @default(now())
+  sentAt         DateTime?
+  receivedAt     DateTime?
+  updatedAt      DateTime @updatedAt
+  
+  @@index([organizationId])
+}
+
+model PurchaseRequestItem {
+  id                String   @id @default(cuid())
+  quantity          Float    // Quantidade a comprar
+  estimatedCost     Float?   // Custo estimado
+  
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  purchaseRequestId String
+  
+  product           Product  @relation(fields: [productId], references: [id])
+  productId         String
+  
+  createdAt         DateTime @default(now())
+
+  @@index([purchaseRequestId])
+  @@index([productId])
+}
+
+// ==============================
+// VARIANTES DE PRODUTO (Vestuário)
+// ==============================
+
+// Atributos de variante (ex: "Cor", "Tamanho")
+model VariantAttribute {
+  id              String   @id @default(cuid())
+  name            String   // "Cor", "Tamanho"
+  
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId  String
+  
+  values          VariantAttributeValue[]
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+// Valores possíveis para cada atributo (ex: "Vermelho", "P", "M", "G")
+model VariantAttributeValue {
+  id           String   @id @default(cuid())
+  value        String   // "Vermelho", "P", "42"
+  
+  attribute    VariantAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  attributeId  String
+  
+  variantValues ProductVariantValue[]
+  
+  createdAt    DateTime @default(now())
+  
+  @@unique([attributeId, value])
+  @@index([attributeId])
+}
+
+// Variante de produto (ex: "Camiseta Vermelha P")
+model ProductVariant {
+  id            String   @id @default(cuid())
+  sku           String?  // SKU único da variante
+  currentStock  Float    @default(0)
+  minStock      Float    @default(0)
+  unitPrice     Float?
+  
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId     String
+  
+  // Relação com valores de atributo via tabela intermediária
+  attributeValues ProductVariantValue[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([productId])
+}
+
+// Tabela intermediária para relação N:N entre ProductVariant e VariantAttributeValue
+model ProductVariantValue {
+  id                   String   @id @default(cuid())
+  
+  variant              ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId            String
+  
+  attributeValue       VariantAttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Cascade)
+  attributeValueId     String
+  
+  @@unique([variantId, attributeValueId])
+  @@index([variantId])
+  @@index([attributeValueId])
+}
+
