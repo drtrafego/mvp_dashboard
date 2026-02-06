@@ -4,6 +4,8 @@ import { users } from "@/server/db/schema";
 import { biDb } from "@/server/db";
 import { eq } from "drizzle-orm";
 import { OrgSwitcher } from "./org-switcher";
+import { OrgDialog } from "@/components/admin/org-dialog";
+import { OrgActions } from "@/components/admin/org-actions";
 import { redirect } from "next/navigation";
 
 export default async function AdminOrganizationsPage() {
@@ -23,7 +25,11 @@ export default async function AdminOrganizationsPage() {
 
     return (
         <div className="p-8">
-            <h1 className="text-3xl font-bold mb-6">Administração de Empresas</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold">Administração de Empresas</h1>
+                <OrgDialog mode="create" />
+            </div>
+
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-700">
@@ -39,6 +45,7 @@ export default async function AdminOrganizationsPage() {
                             <tr key={org.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     {org.name}
+                                    <div className="text-xs text-gray-400 font-normal">{org.slug}</div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                     {org.id}
@@ -49,11 +56,14 @@ export default async function AdminOrganizationsPage() {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <OrgSwitcher
-                                        orgId={org.id}
-                                        orgName={org.name || ""}
-                                        currentOrgId={currentOrgId}
-                                    />
+                                    <div className="flex justify-end items-center gap-2">
+                                        <OrgSwitcher
+                                            orgId={org.id}
+                                            orgName={org.name || ""}
+                                            currentOrgId={currentOrgId}
+                                        />
+                                        <OrgActions org={org} />
+                                    </div>
                                 </td>
                             </tr>
                         ))}

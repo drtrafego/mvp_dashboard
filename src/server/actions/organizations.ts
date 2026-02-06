@@ -56,3 +56,37 @@ export async function getOrganization(id: string) {
     const [org] = await biDb.select().from(organizations).where(eq(organizations.id, id));
     return org;
 }
+
+export async function updateOrganization(id: string, data: Partial<CreateOrgData>) {
+    await ensureSuperAdmin();
+
+    if (data.slug) {
+        const existing = await biDb.select().from(organizations).where(eq(organizations.slug, data.slug));
+        if (existing.length && existing[0].id !== id) {
+            throw new Error("Slug já existe na outra empresa.");
+        }
+    }
+
+    await biDb.update(organizations)
+        .set({
+            ...data,
+            updatedAt: new Date(),
+        })
+        .where(eq(organizations.id, id));
+
+    revalidatePath("/admin");
+    return { success: true };
+}
+
+export async function deleteOrganization(id: string) {
+    await ensureSuperAdmin();
+
+    // Cascading delete is handled by database constraints usually, but let's be explicit if needed
+    // For now, simple delete. Drizzle/Postgres should handle cascade if configured, otherwise might error if FKs exist.
+    // Given the simple schema, we'll try direct delete. If it fails due to foreign keys, the UI handles the error.
+
+    await biDb.delete(organizations).where(eq(organizations.id, id));
+
+    revalidatePath("/admin");
+    return { success: true };
+}
