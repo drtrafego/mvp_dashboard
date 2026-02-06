@@ -252,6 +252,33 @@ export default function SettingsPage() {
 
                     {/* INTEGRATIONS TAB */}
                     <TabsContent value="integrations" className="space-y-6">
+                        {/* Auto-Connect Helper */}
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white dark:bg-blue-900 rounded-full">
+                                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-blue-900 dark:text-blue-100">Sincronizar Conta Google</h3>
+                                    <p className="text-sm text-blue-700 dark:text-blue-300">Vincule automaticamente seu login Google a esta empresa.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    if (!confirm("Isso copiará as permissões do seu login para esta empresa. Continuar?")) return;
+                                    const { connectUserGoogleAccount } = await import("@/server/actions/ad-account-settings");
+                                    const res = await connectUserGoogleAccount();
+                                    if (res.success) alert("✅ " + res.message);
+                                    else alert("❌ " + res.error);
+                                }}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+                            >
+                                Sincronizar Agora
+                            </button>
+                        </div>
+
                         <form onSubmit={handleSubmit(onSubmitSettings)} className="space-y-6">
                             {/* Google Ads */}
                             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">

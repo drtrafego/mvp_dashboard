@@ -1,8 +1,8 @@
 "use server";
 
 import { biDb } from "@/server/db";
-import { adAccountSettings, users } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { adAccountSettings, users, accounts, integrations } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { auth } from "@/server/auth";
 import { revalidatePath } from "next/cache";
 
@@ -142,4 +142,95 @@ export async function checkIsAdmin(): Promise<boolean> {
     const isSuperAdmin = session.user.email && adminEmails.includes(session.user.email);
 
     return isSuperAdmin || user[0].role === "admin" || user[0].role === "owner";
+}
+
+// Manually link current user's Google Account to current Organization
+export async function connectUserGoogleAccount() {
+    const session = await auth();
+    if (!session?.user?.email) {
+        return { success: false, error: "Não autenticado" };
+    }
+
+    const user = await biDb.query.users.findFirst({
+        where: eq(users.email, session.user.email)
+    });
+
+    if (!user || !user.organizationId) {
+        return { success: false, error: "Usuário sem organização" };
+    }
+
+    const orgId = user.organizationId;
+
+    // Find Google Account for this user
+    // We look for provider = 'google' in accounts table
+    const googleAccount = await biDb.query.accounts.findFirst({
+        where: and(
+            eq(accounts.userId, user.id),
+            eq(accounts.provider, "google")
+        )
+    });
+
+    if (!googleAccount || !googleAccount.access_token) {
+        return { success: false, error: "Nenhuma conta Google conectada ao seu login. Tente sair e entrar novamente." };
+    }
+
+    const expiresAt = googleAccount.expires_at
+        ? new Date(googleAccount.expires_at * 1000)
+        : new Date(Date.now() + 3600 * 1000);
+
+    // Upsert tokens into integrations table
+    // 1. Google Ads
+    const existingAds = await biDb.query.integrations.findFirst({
+        where: and(
+            eq(integrations.organizationId, orgId),
+            eq(integrations.provider, "google_ads")
+        )
+    });
+
+    if (existingAds) {
+        await biDb.update(integrations).set({
+            accessToken: googleAccount.access_token,
+            refreshToken: googleAccount.refresh_token || existingAds.refreshToken,
+            expiresAt: expiresAt,
+            updatedAt: new Date(),
+        }).where(eq(integrations.id, existingAds.id));
+    } else {
+        await biDb.insert(integrations).values({
+            organizationId: orgId,
+            provider: "google_ads",
+            providerAccountId: googleAccount.providerAccountId,
+            accessToken: googleAccount.access_token,
+            refreshToken: googleAccount.refresh_token,
+            expiresAt: expiresAt,
+        });
+    }
+
+    // 2. GA4
+    const existingGA4 = await biDb.query.integrations.findFirst({
+        where: and(
+            eq(integrations.organizationId, orgId),
+            eq(integrations.provider, "google_analytics")
+        )
+    });
+
+    if (existingGA4) {
+        await biDb.update(integrations).set({
+            accessToken: googleAccount.access_token,
+            refreshToken: googleAccount.refresh_token || existingGA4.refreshToken,
+            expiresAt: expiresAt,
+            updatedAt: new Date(),
+        }).where(eq(integrations.id, existingGA4.id));
+    } else {
+        await biDb.insert(integrations).values({
+            organizationId: orgId,
+            provider: "google_analytics",
+            providerAccountId: googleAccount.providerAccountId,
+            accessToken: googleAccount.access_token,
+            refreshToken: googleAccount.refresh_token,
+            expiresAt: expiresAt,
+        });
+    }
+
+    revalidatePath("/settings");
+    return { success: true, message: "Conta Google conectada com sucesso!" };
 }

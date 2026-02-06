@@ -22,8 +22,7 @@ export async function getGA4Data(accessToken: string, propertyId: string, days =
             metrics: [
                 { name: 'sessions' },
                 { name: 'totalUsers' },
-                { name: 'conversions' },
-                { name: 'advertiserAdCost' }
+                { name: 'conversions' }
             ]
         }
     });
@@ -35,8 +34,7 @@ export async function getGA4Data(accessToken: string, propertyId: string, days =
         campaign: row.dimensionValues?.[3].value,
         sessions: Number(row.metricValues?.[0].value),
         users: Number(row.metricValues?.[1].value),
-        conversions: Number(row.metricValues?.[2].value),
-        cost: Number(row.metricValues?.[3].value)
+        conversions: Number(row.metricValues?.[2].value)
     })) || [];
 }
 

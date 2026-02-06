@@ -6,7 +6,7 @@ import { subDays, format } from "date-fns";
 import { logSystem } from "@/server/logger";
 
 // Initialize API with default token (System Token or User Token)
-const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
+const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN ? process.env.META_ACCESS_TOKEN.replace(/^"|"$/g, '') : undefined;
 
 export async function getMetaAdsData(organizationId: string, days = 30) {
     if (!META_ACCESS_TOKEN) {
