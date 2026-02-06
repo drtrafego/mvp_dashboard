@@ -78,7 +78,7 @@ export async function syncMetaAds() {
 
             // Insert new
             // Map API data to Schema
-            const values = data.map(item => ({
+            const values = data.map((item: any) => ({
                 integrationId: integration!.id,
                 organizationId: orgId,
                 date: new Date(item.date),
