@@ -46,7 +46,7 @@ export async function getGoogleAdsData(
                 "campaign.id",
                 "campaign.name",
                 "segments.date"
-            ],
+            ] as any,
             metrics: [
                 "metrics.cost_micros",
                 "metrics.impressions",
