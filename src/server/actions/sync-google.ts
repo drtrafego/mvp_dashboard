@@ -126,7 +126,7 @@ export async function syncGoogleAds() {
         }
 
     } catch (e: any) {
-        await logSystem(session.user.id, "GOOGLE_ADS", "ERROR", "Erro interno no sync", e);
+        await logSystem(session.user.id || null, "GOOGLE_ADS", "ERROR", "Erro interno no sync", e);
         return { success: false, error: e.message };
     }
 }
