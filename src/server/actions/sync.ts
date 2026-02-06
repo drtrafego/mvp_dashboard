@@ -67,10 +67,8 @@ export async function syncMetaAds() {
         // 5. Atomic Update (Delete Old -> Insert New for the date range)
         // Define safety window: delete records >= 30 days ago for this integration
         const startDate = subDays(new Date(), daysToSync);
-
         // 5. Atomic Update (Delete Old -> Insert New for the date range)
         // Define safety window: delete records >= 30 days ago for this integration
-        const startDate = subDays(new Date(), daysToSync);
 
         // Delete existing
         await biDb.delete(campaignMetrics)

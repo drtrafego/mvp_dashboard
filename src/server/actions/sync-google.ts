@@ -77,7 +77,6 @@ export async function syncGoogleAds() {
             // 4. Persistence (Similar to Meta)
             const startDate = subDays(new Date(), daysToSync);
             // 4. Persistence (Similar to Meta)
-            const startDate = subDays(new Date(), daysToSync);
 
             await biDb.delete(campaignMetrics)
                 .where(and(
