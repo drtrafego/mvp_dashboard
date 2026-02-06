@@ -77,7 +77,7 @@ export async function getMetaAdsData(organizationId: string, days = 30) {
         // Fetch Insights
         const insights = await account.getInsights(fields, params);
 
-        await logSystem(organizationId, "META_ADS", "DEBUG", `API returned ${insights.length} raw records`, {
+        await logSystem(organizationId, "META_ADS", "INFO", `API returned ${insights.length} raw records`, {
             rawCount: insights.length,
             firstRecord: insights[0] || null,
             lastRecord: insights[insights.length - 1] || null
