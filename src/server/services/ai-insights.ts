@@ -229,7 +229,7 @@ ${roas > 0 ? `ROAS: ${roas.toFixed(2)}x` : ''}
 
         const validCPAs = result
             .filter(r => r.cpa && parseFloat(r.cpa) > 0)
-            .map(r => parseFloat(r.cpa));
+            .map(r => parseFloat(r.cpa as string));
 
         const avgCPA = validCPAs.length > 0
             ? validCPAs.reduce((a, b) => a + b, 0) / validCPAs.length
