@@ -18,8 +18,8 @@ export function DatePickerWithRange({
     className,
 }: React.HTMLAttributes<HTMLDivElement>) {
     const [date, setDate] = React.useState<DateRange | undefined>({
-        from: addDays(new Date(), -30),
-        to: new Date(),
+        from: new Date(new Date().getFullYear(), 0, 12),
+        to: addDays(new Date(new Date().getFullYear(), 0, 12), 30),
     })
 
     const presets = [
@@ -88,6 +88,9 @@ export function DatePickerWithRange({
                                 onSelect={setDate}
                                 numberOfMonths={2}
                                 locale={ptBR}
+                                disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                }
                             />
                         </div>
                     </div>

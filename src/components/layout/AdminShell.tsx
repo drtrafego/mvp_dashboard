@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ModeToggle } from "@/components/ui/theme-toggle";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -76,9 +75,6 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                     <div className="w-8"></div> {/* Spacer */}
                 </header>
 
-                <div className="p-4 flex justify-end md:absolute md:top-4 md:right-4 z-40">
-                    <ModeToggle />
-                </div>
 
                 <main className="p-4 md:p-8 pt-0">
                     {children}
