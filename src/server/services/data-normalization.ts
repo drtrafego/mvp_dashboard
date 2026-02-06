@@ -65,10 +65,12 @@ export function normalizeMetaAdsMetrics(
 }
 
 export async function saveMetrics(
+    organizationId: string,
     integrationId: string,
     metrics: NormalizedMetric[]
 ) {
     const records = metrics.map((m) => ({
+        organizationId,
         integrationId,
         date: m.date,
         impressions: m.impressions,
