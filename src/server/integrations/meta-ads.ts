@@ -66,7 +66,7 @@ export async function getMetaAdsData(organizationId: string, days = 30) {
     };
 
     // Debug logging
-    await logSystem(organizationId, "META_ADS", "DEBUG", "Request params", {
+    await logSystem(organizationId, "META_ADS", "INFO", "Request params", {
         adAccountId,
         dateRange: params.time_range,
         hasToken: !!META_ACCESS_TOKEN,
