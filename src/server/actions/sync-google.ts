@@ -176,15 +176,41 @@ export async function syncGA4() {
         }
 
         try {
-            const data = await getGA4Data(accessToken, propertyId, 120);
+            const data = await getGA4Data(accessToken, propertyId, 30);
 
-            // TODO: Map GA4 data to campaignMetrics (or a specific GA4 table)
-            // Currently campaignMetrics is very ad-centric (spend, clicks). 
-            // GA4 data (sessions, users) might fit partially or need a new table.
-            // For now, we will LOG the success to prove connection.
+            // 4. Persistence
+            const startDate = subDays(new Date(), 30);
 
-            await logSystem(orgId, "GA4", "INFO", "Dados recebidos do GA4 (Log apenas)", { count: data.length, sample: data[0] });
-            return { success: true, count: data.length, message: "Conexão OK. Dados logados." };
+            await biDb.transaction(async (tx) => {
+                // Delete old GA4 data for this integration/period to avoid duplicates
+                await tx.delete(campaignMetrics)
+                    .where(and(
+                        eq(campaignMetrics.integrationId, integration.id),
+                        gte(campaignMetrics.date, startDate)
+                    ));
+
+                const values = data.map((item: any) => ({
+                    integrationId: integration.id,
+                    organizationId: orgId,
+                    date: new Date(item.date),
+                    campaignName: item.campaign === '(not set)' ? 'Direto/Orgânico' : item.campaign,
+                    // GA4 Metrics mapping
+                    sessions: item.sessions,
+                    activeUsers: item.users,
+                    conversions: item.conversions,
+                    // Store Source/Medium in flexible fields or if strictly needed, we might need schema update.
+                    // For now, we rely on campaignName.
+                    // We can use 'adSetId' or 'adId' to store source/medium temporarily if needed, 
+                    // but cleaner to just stick to core metrics found in schema.
+                }));
+
+                if (values.length) {
+                    await tx.insert(campaignMetrics).values(values);
+                }
+            });
+
+            await logSystem(orgId, "GA4", "INFO", `Sincronizados ${data.length} registros no DB`);
+            return { success: true, count: data.length, message: "Dados sincronizados com sucesso!" };
 
         } catch (apiError: any) {
             const errorMsg = apiError?.message || String(apiError) || "Erro desconhecido na API GA4";
