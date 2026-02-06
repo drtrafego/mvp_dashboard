@@ -68,39 +68,41 @@ export async function syncMetaAds() {
         // Define safety window: delete records >= 30 days ago for this integration
         const startDate = subDays(new Date(), daysToSync);
 
-        await biDb.transaction(async (tx) => {
-            // Delete existing
-            await tx.delete(campaignMetrics)
-                .where(and(
-                    eq(campaignMetrics.integrationId, integration!.id),
-                    gte(campaignMetrics.date, startDate)
-                ));
+        // 5. Atomic Update (Delete Old -> Insert New for the date range)
+        // Define safety window: delete records >= 30 days ago for this integration
+        const startDate = subDays(new Date(), daysToSync);
 
-            // Insert new
-            // Map API data to Schema
-            const values = data.map((item: any) => ({
-                integrationId: integration!.id,
-                organizationId: orgId,
-                date: new Date(item.date),
-                campaignId: item.campaignId,
-                campaignName: item.campaignName,
-                adId: item.adId,
-                // Unified Metrics
-                impressions: Number(item.impressions) || 0,
-                clicks: Number(item.clicks) || 0,
-                spend: String(item.spend || 0),
-                conversions: Number(item.conversions) || 0,
-                conversionValue: String(item.conversionValue || 0),
-                // Calculated / Meta Specific
-                ctr: String(item.ctr || 0),
-                cpc: String(item.cpc || 0),
-            }));
+        // Delete existing
+        await biDb.delete(campaignMetrics)
+            .where(and(
+                eq(campaignMetrics.integrationId, integration!.id),
+                gte(campaignMetrics.date, startDate)
+            ));
 
-            // Batch insert? Drizzle handles it, but let's be safe with chunking if huge
-            if (values.length > 0) {
-                await tx.insert(campaignMetrics).values(values);
-            }
-        });
+        // Insert new
+        // Map API data to Schema
+        const values = data.map((item: any) => ({
+            integrationId: integration!.id,
+            organizationId: orgId,
+            date: new Date(item.date),
+            campaignId: item.campaignId,
+            campaignName: item.campaignName,
+            adId: item.adId,
+            // Unified Metrics
+            impressions: Number(item.impressions) || 0,
+            clicks: Number(item.clicks) || 0,
+            spend: String(item.spend || 0),
+            conversions: Number(item.conversions) || 0,
+            conversionValue: String(item.conversionValue || 0),
+            // Calculated / Meta Specific
+            ctr: String(item.ctr || 0),
+            cpc: String(item.cpc || 0),
+        }));
+
+        // Batch insert? Drizzle handles it, but let's be safe with chunking if huge
+        if (values.length > 0) {
+            await biDb.insert(campaignMetrics).values(values);
+        }
 
         return { success: true, count: data.length };
 
