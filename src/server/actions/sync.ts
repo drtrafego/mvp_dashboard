@@ -8,7 +8,7 @@ import { eq, and, gte } from "drizzle-orm";
 import { subDays, format } from "date-fns";
 import { logSystem } from "@/server/logger";
 
-export async function syncMetaAds() {
+export async function syncMetaAds(days = 30) {
     const session = await auth();
     if (!session?.user?.email) return { success: false, error: "Não autenticado" };
 
@@ -55,8 +55,8 @@ export async function syncMetaAds() {
         }
 
         // 4. Fetch Data (Last 120 Days)
-        await logSystem(orgId, "META_ADS", "INFO", "Buscando dados da API Meta (120 dias)...");
-        const daysToSync = 120;
+        await logSystem(orgId, "META_ADS", "INFO", `Buscando dados da API Meta (${days} dias)...`);
+        const daysToSync = days;
         const data = await getMetaAdsData(orgId, daysToSync);
 
         if (!data.length) {
