@@ -4,7 +4,7 @@ import { auth } from "@/server/auth";
 import { biDb } from "@/server/db";
 import { campaignMetrics, integrations, users } from "@/server/db/schema";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
-import { subDays } from "date-fns";
+import { subDays, startOfDay } from "date-fns";
 
 export type DashboardMetrics = {
     totals: {
@@ -31,7 +31,7 @@ export async function getMetaAdsMetrics(days = 30): Promise<DashboardMetrics> {
     const orgId = user.organizationId;
 
     // Filter by Date
-    const startDate = subDays(new Date(), days);
+    const startDate = startOfDay(subDays(new Date(), days));
 
     // Fetch Raw Data
     // We join with integrations to ensure we only get 'meta' provider data
