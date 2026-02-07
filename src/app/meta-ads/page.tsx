@@ -49,7 +49,7 @@ function NotConnectedState({ platform }: { platform: string }) {
 }
 
 async function MetaAdsContent() {
-    const { totals, campaigns } = await getMetaAdsMetrics(30);
+    const { totals, campaigns } = await getMetaAdsMetrics(90);
 
     const fmtMoney = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
     const fmtNum = (val: number) => new Intl.NumberFormat('pt-BR').format(val);
