@@ -216,3 +216,20 @@ export const invitations = pgTable("invitations", {
     expiresAt: timestamp("expires_at").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// GA4 Dimensions Table (City, OS, Device, Page)
+export const analyticsDimensions = pgTable("analytics_dimensions", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").references(() => organizations.id).notNull(),
+    integrationId: uuid("integration_id").references(() => integrations.id).notNull(),
+    date: timestamp("date").notNull(),
+
+    dimensionType: text("dimension_type").notNull(), // 'CITY', 'REGION', 'DEVICE', 'OS', 'PAGE_PATH', 'SOURCE'
+    dimensionValue: text("dimension_value").notNull(), // 'São Paulo', 'Mobile', '/home', 'google'
+
+    sessions: integer("sessions").default(0),
+    users: integer("users").default(0),
+    conversions: integer("conversions").default(0),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});

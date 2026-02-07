@@ -3,11 +3,11 @@
 import { auth } from "@/server/auth";
 import { logSystem } from "@/server/logger";
 import { biDb } from "@/server/db";
-import { users, adAccountSettings, integrations, campaignMetrics } from "@/server/db/schema";
+import { users, adAccountSettings, integrations, campaignMetrics, analyticsDimensions } from "@/server/db/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { subDays } from "date-fns";
 import { getGoogleAdsData } from "@/server/integrations/google-ads";
-import { getGA4Data } from "@/server/integrations/ga4";
+import { getGA4Data, getGA4Dimensions } from "@/server/integrations/ga4";
 import { getValidAccessToken } from "@/server/utils/token-refresh";
 
 export async function syncGoogleAds() {
@@ -176,12 +176,11 @@ export async function syncGA4() {
         }
 
         try {
+            // 1. Fetch Standard Campaign Data (Existing Logic)
             const data = await getGA4Data(accessToken, propertyId, 90);
 
-            // 4. Persistence
+            // 4. Persistence for Standard Data
             const startDate = subDays(new Date(), 90);
-
-
 
             // Delete old GA4 data for this integration/period to avoid duplicates
             await biDb.delete(campaignMetrics)
@@ -191,26 +190,15 @@ export async function syncGA4() {
                 ));
 
             const values = data.map((item: any) => {
-                // Parse YYYYMMDD
-                const dStr = String(item.date);
-                const year = dStr.substring(0, 4);
-                const month = dStr.substring(4, 6);
-                const day = dStr.substring(6, 8);
-                const parsedDate = new Date(`${year}-${month}-${day}`); // YYYY-MM-DD works reliably
-
+                const parsedDate = parseGA4Date(item.date);
                 return {
                     integrationId: integration.id,
                     organizationId: orgId,
                     date: parsedDate,
                     campaignName: item.campaign === '(not set)' ? 'Direto/Orgânico' : item.campaign,
-                    // GA4 Metrics mapping
                     sessions: Math.round(Number(item.sessions || 0)),
                     activeUsers: Math.round(Number(item.users || 0)),
                     conversions: Math.round(Number(item.conversions || 0)),
-                    // Store Source/Medium in flexible fields or if strictly needed, we might need schema update.
-                    // For now, we rely on campaignName.
-                    // We can use 'adSetId' or 'adId' to store source/medium temporarily if needed, 
-                    // but cleaner to just stick to core metrics found in schema.
                 };
             });
 
@@ -218,7 +206,49 @@ export async function syncGA4() {
                 await biDb.insert(campaignMetrics).values(values);
             }
 
-            await logSystem(orgId, "GA4", "INFO", `Sincronizados ${data.length} registros no DB`);
+            // 2. Fetch Dimensions Data (New Logic)
+            await logSystem(orgId, "GA4", "INFO", "Sincronizando dimensões (Cidade, OS, Device)...");
+
+            // Delete old dimensions data
+            await biDb.delete(analyticsDimensions)
+                .where(and(
+                    eq(analyticsDimensions.integrationId, integration.id),
+                    gte(analyticsDimensions.date, startDate)
+                ));
+
+            const dimensionsToSync = [
+                { type: 'CITY', apiDim: 'city' },
+                { type: 'REGION', apiDim: 'region' },
+                { type: 'DEVICE', apiDim: 'deviceCategory' },
+                { type: 'OS', apiDim: 'operatingSystem' },
+                { type: 'PAGE_PATH', apiDim: 'pagePath' },
+                { type: 'SOURCE', apiDim: 'sessionSource' }
+            ];
+
+            let totalDimRows = 0;
+
+            for (const dim of dimensionsToSync) {
+                const dimData = await getGA4Dimensions(accessToken, propertyId, 90, dim.apiDim);
+
+                if (dimData && dimData.length > 0) {
+                    const dimValues = dimData.map((item: any) => ({
+                        integrationId: integration.id,
+                        organizationId: orgId,
+                        date: parseGA4Date(item.date),
+                        dimensionType: dim.type,
+                        dimensionValue: item[dim.apiDim] || '(not set)',
+                        sessions: Math.round(Number(item.sessions || 0)),
+                        users: Math.round(Number(item.totalUsers || 0)),
+                        conversions: Math.round(Number(item.conversions || 0)),
+                    }));
+
+                    // Insert in batches if needed, but for now direct insert
+                    await biDb.insert(analyticsDimensions).values(dimValues);
+                    totalDimRows += dimValues.length;
+                }
+            }
+
+            await logSystem(orgId, "GA4", "INFO", `Sync concluído: ${data.length} campanhas, ${totalDimRows} linhas de dimensões.`);
             return { success: true, count: data.length, message: "Dados sincronizados com sucesso!" };
 
         } catch (apiError: any) {
@@ -226,8 +256,15 @@ export async function syncGA4() {
             await logSystem(orgId, "GA4", "ERROR", errorMsg, apiError);
             return { success: false, error: errorMsg };
         }
-
     } catch (e: any) {
         return { success: false, error: e.message };
     }
+}
+
+function parseGA4Date(dateStr: string | number): Date {
+    const dStr = String(dateStr);
+    const year = dStr.substring(0, 4);
+    const month = dStr.substring(4, 6);
+    const day = dStr.substring(6, 8);
+    return new Date(`${year}-${month}-${day}`);
 }

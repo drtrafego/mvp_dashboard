@@ -3,7 +3,7 @@
 
 import { auth } from "@/server/auth";
 import { biDb } from "@/server/db";
-import { campaignMetrics, integrations, users } from "@/server/db/schema";
+import { campaignMetrics, integrations, users, analyticsDimensions } from "@/server/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
 import { subDays, startOfDay } from "date-fns";
 
@@ -57,32 +57,64 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
     let totalUsers = 0;
     let totalConversions = 0;
 
-    // Aggregation
-    const sourceMap = new Map<string, any>();
+    // Aggregation for Sources (using Dimensions table if avaiable or fallback to campaignMetrics)
+    // We will query analyticsDimensions for all breakdowns
 
-    for (const m of metrics) {
-        const sess = m.sessions || 0;
-        const usrs = m.users || 0;
-        const conv = m.conversions || 0;
+    // Fetch Dimensions Data
+    const dimData = await biDb.select()
+        .from(analyticsDimensions)
+        .where(and(
+            eq(analyticsDimensions.organizationId, orgId),
+            gte(analyticsDimensions.date, startDate)
+        ));
 
-        totalSessions += sess;
-        totalUsers += usrs;
-        totalConversions += conv;
+    // Maps for aggregation
+    const osMap = new Map<string, number>();
+    const deviceMap = new Map<string, number>();
+    const cityMap = new Map<string, number>(); // For future use if we want a map chart
+    const pageMap = new Map<string, number>();
+    const sourceMap = new Map<string, any>(); // Redoing source map from dimensions if available
 
-        // Group by Source (Campaign Name used as proxy for now since schema is limited)
-        const name = m.campaign || "Direto / Orgânico";
-        if (!sourceMap.has(name)) {
-            sourceMap.set(name, {
-                name,
-                sessions: 0,
-                users: 0,
-                conversions: 0
-            });
+    // Check if we have dimension data
+    const hasDimensions = dimData.length > 0;
+
+    if (hasDimensions) {
+        for (const row of dimData) {
+            const val = row.sessions || 0;
+
+            if (row.dimensionType === 'OS') {
+                osMap.set(row.dimensionValue, (osMap.get(row.dimensionValue) || 0) + val);
+            } else if (row.dimensionType === 'DEVICE') {
+                deviceMap.set(row.dimensionValue, (deviceMap.get(row.dimensionValue) || 0) + val);
+            } else if (row.dimensionType === 'PAGE_PATH') {
+                pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + val);
+            } else if (row.dimensionType === 'SOURCE') {
+                // Use sessionSource dimension for more accurate source data than campaigns
+                if (!sourceMap.has(row.dimensionValue)) {
+                    sourceMap.set(row.dimensionValue, { name: row.dimensionValue, sessions: 0, users: 0, conversions: 0 });
+                }
+                const s = sourceMap.get(row.dimensionValue);
+                s.sessions += val;
+                s.users += (row.users || 0);
+                s.conversions += (row.conversions || 0);
+            }
         }
-        const s = sourceMap.get(name);
-        s.sessions += sess;
-        s.users += usrs;
-        s.conversions += conv;
+    } else {
+        // FALLBACK: If no dimensions synced yet, keep using campaign metrics for Source
+        for (const m of metrics) {
+            const sess = m.sessions || 0;
+            const usrs = m.users || 0;
+            const conv = m.conversions || 0;
+            const name = m.campaign || "Direto / Orgânico";
+
+            if (!sourceMap.has(name)) {
+                sourceMap.set(name, { name, sessions: 0, users: 0, conversions: 0 });
+            }
+            const s = sourceMap.get(name);
+            s.sessions += sess;
+            s.users += usrs;
+            s.conversions += conv;
+        }
     }
 
     const sources = Array.from(sourceMap.values())
@@ -92,38 +124,56 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
         }))
         .sort((a, b) => b.sessions - a.sessions);
 
-    // Mock Dimensions (until we have them in DB)
-    const osData = [
-        { name: 'Windows', value: 60.9, color: '#f97316' }, // Orange
-        { name: 'Android', value: 24.7, color: '#ef4444' }, // Red
-        { name: 'iOS', value: 11, color: '#fb923c' }, // Light Orange
-        { name: 'MacOS', value: 3.4, color: '#fdba74' }, // Lighter Orange
-    ];
+    // Format OS Data
+    const osColors = ['#f97316', '#ef4444', '#fb923c', '#fdba74', '#9ca3af'];
+    const osData = Array.from(osMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map((entry, i) => ({
+            name: entry[0],
+            value: entry[1],
+            color: osColors[i % osColors.length]
+        }));
 
-    const deviceData = [
-        { name: 'Mobile', value: 85.4, color: '#f97316' },
-        { name: 'Desktop', value: 14.3, color: '#ef4444' },
-        { name: 'Tablet', value: 0.3, color: '#fb923c' },
-    ];
+    // Format Device Data
+    const deviceColors = ['#f97316', '#ef4444', '#fb923c'];
+    const deviceData = Array.from(deviceMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map((entry, i) => ({
+            name: entry[0],
+            value: entry[1],
+            color: deviceColors[i % deviceColors.length]
+        }));
 
-    const weekData = [
-        { day: 'Monday', value: 973 },
-        { day: 'Tuesday', value: 1199 },
-        { day: 'Wednesday', value: 1197 },
-        { day: 'Thursday', value: 1094 },
-        { day: 'Friday', value: 1029 },
-        { day: 'Saturday', value: 957 },
-        { day: 'Sunday', value: 891 },
-    ];
+    // Format Pages
+    const pages = Array.from(pageMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(entry => ({
+            path: entry[0],
+            views: entry[1]
+        }));
 
-    const pages = [
-        { path: 'app.dashcortex.com/', views: 1059 },
-        { path: 'app.dashcortex.com/login', views: 68 },
-        { path: 'app.dashcortex.com/register', views: 21 },
-        { path: 'app.dashcortex.com/dashboard', views: 17 },
-        { path: 'app.dashcortex.com/settings', views: 13 },
-        { path: 'app.dashcortex.com/profile', views: 10 },
-    ];
+    // Use Totals from CampaignMetrics (more reliable for high level) or aggregate from dimensions?
+    // CampaignMetrics is safer for totals. OS/Device are subsets.
+
+    // Week Data (Mock or aggregation from daily)
+    // We can aggregate dailyMap by day of week
+    const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const weekMap = new Array(7).fill(0);
+
+    metrics.forEach(m => {
+        const dayIndex = new Date(m.date).getDay();
+        weekMap[dayIndex] += (m.sessions || 0);
+    });
+
+    const weekData = weekMap.map((val, i) => ({
+        day: dayNames[i],
+        value: val
+    }));
+    // Rotate to start on Monday if preferred, but Sunday start is standard JS
+    // Let's reorder to Mon-Sun for business view
+    const weekDataSorted = [...weekData.slice(1), weekData[0]];
 
     // Daily Map for Sparklines
     const dailyMap = new Map<string, any>();

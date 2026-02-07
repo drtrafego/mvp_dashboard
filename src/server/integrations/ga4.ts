@@ -1,41 +1,56 @@
 import { google } from 'googleapis';
 
 export async function getGA4Data(accessToken: string, propertyId: string, days = 30) {
+    // Standard Report for Campaign/Date (Backwards compatibility)
+    return runReport(accessToken, propertyId, days,
+        [{ name: 'date' }, { name: 'campaignName' }],
+        [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
+    );
+}
+
+export async function getGA4Dimensions(accessToken: string, propertyId: string, days = 30, dimension: string) {
+    // dimension: 'city', 'region', 'deviceCategory', 'operatingSystem', 'pagePath', 'sessionSource'
+    return runReport(accessToken, propertyId, days,
+        [{ name: 'date' }, { name: dimension }],
+        [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
+    );
+}
+
+async function runReport(accessToken: string, propertyId: string, days: number, dimensions: any[], metrics: any[]) {
     const analyticsData = google.analyticsdata({
         version: 'v1beta',
         auth: asOAuth2Client(accessToken)
     });
 
-    const response = await analyticsData.properties.runReport({
-        property: `properties/${propertyId}`,
-        requestBody: {
-            dateRanges: [{
-                startDate: `${days}daysAgo`,
-                endDate: 'today',
-            }],
-            dimensions: [
-                { name: 'date' },
-                { name: 'sessionSource' },
-                { name: 'sessionMedium' },
-                { name: 'campaignName' }
-            ],
-            metrics: [
-                { name: 'sessions' },
-                { name: 'totalUsers' },
-                { name: 'conversions' }
-            ]
-        }
-    });
+    try {
+        const response = await analyticsData.properties.runReport({
+            property: `properties/${propertyId}`,
+            requestBody: {
+                dateRanges: [{
+                    startDate: `${days}daysAgo`,
+                    endDate: 'today',
+                }],
+                dimensions,
+                metrics
+            }
+        });
 
-    return response.data.rows?.map(row => ({
-        date: row.dimensionValues?.[0].value,
-        source: row.dimensionValues?.[1].value,
-        medium: row.dimensionValues?.[2].value,
-        campaign: row.dimensionValues?.[3].value,
-        sessions: Number(row.metricValues?.[0].value),
-        users: Number(row.metricValues?.[1].value),
-        conversions: Number(row.metricValues?.[2].value)
-    })) || [];
+        return response.data.rows?.map(row => {
+            const result: any = {};
+            // Map dimensions
+            dimensions.forEach((dim, index) => {
+                result[dim.name] = row.dimensionValues?.[index].value;
+            });
+            // Map metrics
+            metrics.forEach((met, index) => {
+                result[met.name] = Number(row.metricValues?.[index].value);
+            });
+            return result;
+        }) || [];
+    } catch (e) {
+        console.error("GA4 Report Error:", e);
+        return [];
+    }
 }
 
 function asOAuth2Client(accessToken: string) {
