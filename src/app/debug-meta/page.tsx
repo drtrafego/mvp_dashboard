@@ -91,7 +91,7 @@ export default async function DebugMetaPage() {
                 <ul className="list-disc ml-5 space-y-1">
                     <li>Se <strong>(1)</strong> estiver errado, você está na Org errada.</li>
                     <li>Se <strong>(2)</strong> estiver vazio, o banco está vazio (o script force-sync falhou ou escreveu em outra Org).</li>
-                    <li>Se <strong>(2)</strong> tem dados mas <strong>(3)</strong> está zerado, é erro de FILTRO DE DATA (Data < 30 dias).</li>
+                    <li>Se <strong>(2)</strong> tem dados mas <strong>(3)</strong> está zerado, é erro de FILTRO DE DATA (Data &lt; 30 dias).</li>
                 </ul>
             </section>
 
