@@ -6,7 +6,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Cell, PieChart, Pie
 } from "recharts";
-import { ArrowUp, ArrowDown, Filter, Download, Grip, HelpCircle, RefreshCw } from "lucide-react";
+import { ArrowUp, ArrowDown, Filter, Download, Grip, HelpCircle, RefreshCw, Calendar } from "lucide-react";
 
 // --- Types ---
 type DailyMetric = {
@@ -116,58 +116,6 @@ const MetricCard = ({
     );
 };
 
-// Funnel Segment Component using Clip Path for Trapazoid/Funnel shape
-const FunnelLayer = ({
-    label,
-    value,
-    widthPercent,
-    color,
-    zIndex
-}: {
-    label: string,
-    value: string | number,
-    widthPercent: number,
-    color: string,
-    zIndex: number
-}) => {
-    return (
-        <div
-            className="relative flex items-center justify-center mb-[-10px]"
-            style={{
-                width: `${widthPercent}%`,
-                height: '80px',
-                zIndex: zIndex,
-            }}
-        >
-            {/* The Shape */}
-            <div
-                className="absolute inset-0 shadow-lg"
-                style={{
-                    background: `linear-gradient(to bottom, ${color}, ${adjustColorBrightness(color, -20)})`,
-                    clipPath: 'polygon(0 0, 100% 0, 85% 100%, 15% 100%)',
-                    borderRadius: '0px',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
-                }}
-            />
-
-            {/* The Shine/Highlight */}
-            <div
-                className="absolute inset-0 opacity-20"
-                style={{
-                    background: `linear-gradient(to right, transparent 0%, white 50%, transparent 100%)`,
-                    clipPath: 'polygon(0 0, 100% 0, 85% 100%, 15% 100%)',
-                }}
-            />
-
-            {/* Content */}
-            <div className="relative z-10 text-center flex flex-col items-center justify-center pt-2">
-                <span className="text-white text-xs font-medium uppercase tracking-wide drop-shadow-md opacity-90">{label}</span>
-                <span className="text-white text-xl font-bold drop-shadow-md">{value}</span>
-            </div>
-        </div>
-    );
-}
-
 // Utility to darken color for gradient
 function adjustColorBrightness(hex: string, percent: number) {
     const num = parseInt(hex.replace("#", ""), 16),
@@ -176,6 +124,65 @@ function adjustColorBrightness(hex: string, percent: number) {
         G = (num >> 8 & 0x00FF) + amt,
         B = (num & 0x0000FF) + amt;
     return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+}
+
+// Funnel Layer with 3D elliptical effect
+const FunnelLayer = ({
+    label,
+    value,
+    widthPercent,
+    color,
+    zIndex,
+    isBottom = false
+}: {
+    label: string,
+    value: string | number,
+    widthPercent: number,
+    color: string,
+    zIndex: number,
+    isBottom?: boolean
+}) => {
+    return (
+        <div
+            className="relative flex items-center justify-center -mb-4"
+            style={{
+                width: `${widthPercent}%`,
+                height: '70px',
+                zIndex: zIndex,
+            }}
+        >
+            {/* The Shape (Trapezoid + Ellipse for 3D) */}
+            <div
+                className="absolute inset-x-0 top-0 bottom-0 shadow-2xl"
+                style={{
+                    background: `linear-gradient(180deg, ${color} 0%, ${adjustColorBrightness(color, -30)} 100%)`,
+                    clipPath: isBottom
+                        ? 'polygon(0 0, 100% 0, 90% 85%, 10% 85%)'
+                        : 'polygon(0 0, 100% 0, 85% 100%, 15% 100%)',
+                    borderRadius: '0 0 20px 20px', // Soften corners
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                }}
+            />
+
+            {/* Top Oval (The "Opening") - Only visible if not covered by layer above, 
+                but we usually cover it. For the top layer, we need a distinct oval. */}
+
+            {/* Highlight */}
+            <div
+                className="absolute inset-0 opacity-30"
+                style={{
+                    background: `linear-gradient(90deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%)`,
+                    clipPath: 'polygon(0 0, 100% 0, 85% 100%, 15% 100%)',
+                }}
+            />
+
+            {/* Content */}
+            <div className="relative z-10 text-center flex flex-col items-center justify-center pt-2 drop-shadow-lg">
+                <span className="text-blue-100 text-[10px] font-bold uppercase tracking-wider opacity-80">{label}</span>
+                <span className="text-white text-lg font-black tracking-tight">{value}</span>
+            </div>
+        </div>
+    );
 }
 
 const TrafficFunnel = ({
@@ -194,11 +201,11 @@ const TrafficFunnel = ({
 
     // Derived Metrics
     // Mock "Page Views" = 90% of Clicks (Connect Rate approximation)
-    const pageViews = Math.round(clicks * 0.9165); // Matching reference 91.65% roughly
+    const pageViews = Math.round(clicks * 0.9165);
     // Mock "Checkouts" = 30% of Page Views
-    const checkouts = Math.round(pageViews * 0.3219); // Matching reference 32.19% roughly
+    const checkouts = Math.round(pageViews * 0.3219);
 
-    // Rates
+    // Rates for side display
     const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
     const connectRate = clicks > 0 ? (pageViews / clicks) * 100 : 0;
     const checkoutRate = pageViews > 0 ? (checkouts / pageViews) * 100 : 0;
@@ -207,21 +214,26 @@ const TrafficFunnel = ({
     const formatUncertain = (val: number) => val === 0 ? "0" : new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(val);
 
     return (
-        <Card className="h-full bg-[#0f111a] border-gray-800 relative overflow-visible">
+        <Card className="h-full bg-[#0f111a] border-gray-800 relative overflow-visible flex flex-col justify-between">
 
             {/* Title Layer */}
             <div className="absolute top-6 left-0 right-0 z-20 flex justify-center pointer-events-none">
-                <h3 className="text-xl font-semibold text-gray-200">Funil de Tráfego</h3>
+                <h3 className="text-lg font-semibold text-gray-200 tracking-tight">Funil de Tráfego</h3>
             </div>
             {/* Refresh Icon Mock */}
-            <div className="absolute top-16 left-[25%] z-20 pointer-events-none opacity-20">
+            <div className="absolute top-16 left-[28%] z-20 pointer-events-none opacity-10">
                 <RefreshCw size={60} className="text-white animate-spin-slow" />
             </div>
 
-            <div className="flex h-full pt-16 pb-4">
+            {/* Funnel Area */}
+            <div className="flex flex-1 pt-14 pb-2 items-center">
 
-                {/* Funnel Visual (Left/Center) */}
-                <div className="flex-2 flex flex-col items-center justify-start w-2/3 pl-4">
+                {/* Funnel Visual (Center-Left) */}
+                <div className="flex flex-col items-center w-[60%] mx-auto relative z-10">
+                    {/* Top Oval (Impressions/Entry) */}
+                    <div className="w-[100%] h-6 bg-[#0ea5e9] rounded-[50%] opacity-50 absolute -top-3 z-0 blur-sm"></div>
+                    <div className="w-[100%] h-4 bg-[#0284c7] rounded-[50%] absolute -top-2 z-5 border border-white/10"></div>
+
                     <FunnelLayer
                         label="Cliques"
                         value={formatUncertain(clicks)}
@@ -232,61 +244,64 @@ const TrafficFunnel = ({
                     <FunnelLayer
                         label="Page Views"
                         value={formatUncertain(pageViews)}
-                        widthPercent={85}
+                        widthPercent={82}
                         color="#0284c7" // Sky 600
                         zIndex={3}
                     />
                     <FunnelLayer
                         label="Checkouts"
                         value={formatUncertain(checkouts)}
-                        widthPercent={70}
+                        widthPercent={64}
                         color="#0369a1" // Sky 700
                         zIndex={2}
                     />
                     <FunnelLayer
                         label="Compras"
                         value={formatUncertain(conversions)}
-                        widthPercent={55}
+                        widthPercent={46}
                         color="#0c4a6e" // Sky 900
                         zIndex={1}
+                        isBottom={true}
                     />
                 </div>
 
-                {/* Metrics List (Right Side) */}
-                <div className="flex-1 flex flex-col justify-center space-y-6 pr-4 text-right">
-                    <div>
-                        <div className="text-xs text-gray-400 mb-0.5">Taxa de Cliques</div>
-                        <div className="text-2xl font-medium text-white">{ctr.toFixed(2)}%</div>
+                {/* Metrics List (Right Side - Absolute/Fixed pos relative to container) */}
+                <div className="absolute right-4 top-16 bottom-20 flex flex-col justify-between py-4 text-right z-20">
+                    <div className="flex flex-col items-end">
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Cliques</div>
+                        <div className="text-xl font-bold text-white">{ctr.toFixed(2)}%</div>
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 mb-0.5">Connect Rate</div>
-                        <div className="text-2xl font-medium text-white">{connectRate.toFixed(2)}%</div>
+                    <div className="flex flex-col items-end">
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Connect Rate</div>
+                        <div className="text-xl font-bold text-white">{connectRate.toFixed(2)}%</div>
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 mb-0.5">Taxa de Checkout</div>
-                        <div className="text-2xl font-medium text-white">{checkoutRate.toFixed(2)}%</div>
+                    <div className="flex flex-col items-end">
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Checkout</div>
+                        <div className="text-xl font-bold text-white">{checkoutRate.toFixed(2)}%</div>
                     </div>
-                    <div>
-                        <div className="text-xs text-gray-400 mb-0.5">Taxa de Compras</div>
-                        <div className="text-2xl font-medium text-white">{purchaseRate.toFixed(2)}%</div>
+                    <div className="flex flex-col items-end">
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Compras</div>
+                        <div className="text-xl font-bold text-white">{purchaseRate.toFixed(2)}%</div>
                     </div>
                 </div>
 
             </div>
 
-            {/* Footer Metrics (Bottom Cards) */}
-            <div className="grid grid-cols-3 gap-3 mt-4">
-                <div className="bg-[#161822] p-3 rounded-lg border border-gray-800/50">
-                    <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Add to Cart</div>
-                    <div className="text-lg font-bold text-white">0</div>
+            {/* Footer Metrics (Bottom Cards - Aligned Grid) */}
+            <div className="grid grid-cols-3 gap-2 mt-2 pt-4 border-t border-gray-800/50">
+                <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
+                    <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Add to Cart</div>
+                    <div className="text-base font-bold text-white">0</div>
                 </div>
-                <div className="bg-[#161822] p-3 rounded-lg border border-gray-800/50">
-                    <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Frequência</div>
-                    <div className="text-lg font-bold text-white">{frequency > 0 ? frequency.toFixed(2) : "1.12"}</div>
+                <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
+                    <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Frequência</div>
+                    <div className="text-base font-bold text-white">{frequency > 0 ? frequency.toFixed(2) : "1.12"}</div>
                 </div>
-                <div className="bg-[#161822] p-3 rounded-lg border border-gray-800/50">
-                    <div className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">CPM</div>
-                    <div className="text-lg font-bold text-white">R$ {cpm > 0 ? cpm.toFixed(2) : "15.20"}</div>
+                <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
+                    <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">CPM</div>
+                    <div className="text-base font-bold text-white">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cpm || 15.20)}
+                    </div>
                 </div>
             </div>
         </Card>
