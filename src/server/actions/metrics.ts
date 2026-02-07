@@ -44,6 +44,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         clicks: campaignMetrics.clicks,
         conversions: campaignMetrics.conversions,
         conversionValue: campaignMetrics.conversionValue,
+        date: campaignMetrics.date,
     })
         .from(campaignMetrics)
         .innerJoin(integrations, eq(campaignMetrics.integrationId, integrations.id))
