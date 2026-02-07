@@ -440,11 +440,10 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                     <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Detalhamento</button>
                     <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Mobile</button>
                 </div>
-        </div>
-            </header >
+            </header>
 
-        {/* KPI Cards Row */ }
-        < div className = "grid grid-cols-1 md:grid-cols-5 gap-4" >
+            {/* KPI Cards Row */}
+            < div className="grid grid-cols-1 md:grid-cols-5 gap-4" >
                 <MetricCard
                     title="Investimento"
                     value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.spend)}
@@ -492,30 +491,30 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                 />
             </div >
 
-        {/* Charts Section */ }
-        < div className = "grid grid-cols-1 lg:grid-cols-3 gap-6" >
+            {/* Charts Section */}
+            < div className="grid grid-cols-1 lg:grid-cols-3 gap-6" >
 
-            {/* Funnel (Left - 1 col) */ }
-            < div className = "lg:col-span-1" >
-                <TrafficFunnel
-                    impressions={totals.impressions}
-                    clicks={totals.clicks}
-                    conversions={totals.conversions}
-                    cpm={totals.cpm}
-                    frequency={totals.frequency}
-                />
+                {/* Funnel (Left - 1 col) */}
+                < div className="lg:col-span-1" >
+                    <TrafficFunnel
+                        impressions={totals.impressions}
+                        clicks={totals.clicks}
+                        conversions={totals.conversions}
+                        cpm={totals.cpm}
+                        frequency={totals.frequency}
+                    />
                 </div >
 
-        {/* Main Line Chart (Right - 2 cols) */ }
-        < div className = "lg:col-span-2" >
-            <MainChart data={safeDaily} />
+                {/* Main Line Chart (Right - 2 cols) */}
+                < div className="lg:col-span-2" >
+                    <MainChart data={safeDaily} />
                 </div >
             </div >
 
-        {/* Bottom Section: Table & Pie */ }
-        < div className = "grid grid-cols-1 lg:grid-cols-3 gap-6" >
-            {/* Table (2 cols) */ }
-            < Card className = "lg:col-span-2 overflow-hidden !p-0 border-gray-800" >
+            {/* Bottom Section: Table & Pie */}
+            < div className="grid grid-cols-1 lg:grid-cols-3 gap-6" >
+                {/* Table (2 cols) */}
+                < Card className="lg:col-span-2 overflow-hidden !p-0 border-gray-800" >
                     <div className="p-4 border-b border-gray-800 bg-[#12141f] flex justify-between items-center">
                         <div className="flex gap-4 text-sm font-medium">
                             <span className="text-white border-b-2 border-blue-500 pb-4 -mb-4">Campanhas</span>
@@ -565,8 +564,8 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                     </div>
                 </Card >
 
-        {/* Best Ads Pie (1 col) */ }
-        < Card className = "border-gray-800" >
+                {/* Best Ads Pie (1 col) */}
+                < Card className="border-gray-800" >
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-sm font-semibold text-gray-300">Melhores Anúncios (Conversões)</h3>
                     </div>
@@ -601,18 +600,18 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
-    {/* Legend */ }
-    <div className="space-y-1 mt-2">
-        {campaigns.slice(0, 3).map((c, i) => (
-            <div key={i} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 max-w-[70%]">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ["#3b82f6", "#22c55e", "#a855f7"][i] }}></div>
-                    <span className="truncate text-gray-400">{c.name}</span>
-                </div>
-                <span className="text-white font-medium">{c.conversions}</span>
-            </div>
-        ))}
-    </div>
+                    {/* Legend */}
+                    <div className="space-y-1 mt-2">
+                        {campaigns.slice(0, 3).map((c, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2 max-w-[70%]">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ["#3b82f6", "#22c55e", "#a855f7"][i] }}></div>
+                                    <span className="truncate text-gray-400">{c.name}</span>
+                                </div>
+                                <span className="text-white font-medium">{c.conversions}</span>
+                            </div>
+                        ))}
+                    </div>
                 </Card >
             </div >
         </div >
