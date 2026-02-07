@@ -72,14 +72,15 @@ function NotConnectedState() {
         </div>
     );
 }
-title,
+function MetricCard({
+    title,
     value,
     subtitle,
     color,
 }: {
     title: string;
     value: string;
-    subtitle ?: string;
+    subtitle?: string;
     color: string;
 }) {
     const colorClasses: Record<string, string> = {
