@@ -20,7 +20,7 @@ export type DashboardMetrics = {
     campaigns: any[];
 };
 
-export async function getMetaAdsMetrics(days = 30): Promise<DashboardMetrics> {
+export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
     const session = await auth();
     if (!session?.user?.email) throw new Error("Não autenticado");
 
