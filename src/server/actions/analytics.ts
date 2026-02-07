@@ -11,13 +11,16 @@ export type AnalyticsMetrics = {
     totals: {
         sessions: number;
         users: number;
-        conversions: number;
+        newUsers: number;
+        pageViews: number;
         engagementRate: number;
-        avgSessionDuration: number;
-        bounceRate: number;
     };
+    daily: any[];
     sources: any[];
-    pages: any[]; // Placeholder for now as we don't sync pages yet
+    pages: any[];
+    osData: any[];
+    deviceData: any[];
+    weekData: any[];
 };
 
 export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> {
@@ -89,16 +92,73 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
         }))
         .sort((a, b) => b.sessions - a.sessions);
 
+    // Mock Dimensions (until we have them in DB)
+    const osData = [
+        { name: 'Windows', value: 60.9, color: '#f97316' }, // Orange
+        { name: 'Android', value: 24.7, color: '#ef4444' }, // Red
+        { name: 'iOS', value: 11, color: '#fb923c' }, // Light Orange
+        { name: 'MacOS', value: 3.4, color: '#fdba74' }, // Lighter Orange
+    ];
+
+    const deviceData = [
+        { name: 'Mobile', value: 85.4, color: '#f97316' },
+        { name: 'Desktop', value: 14.3, color: '#ef4444' },
+        { name: 'Tablet', value: 0.3, color: '#fb923c' },
+    ];
+
+    const weekData = [
+        { day: 'Monday', value: 973 },
+        { day: 'Tuesday', value: 1199 },
+        { day: 'Wednesday', value: 1197 },
+        { day: 'Thursday', value: 1094 },
+        { day: 'Friday', value: 1029 },
+        { day: 'Saturday', value: 957 },
+        { day: 'Sunday', value: 891 },
+    ];
+
+    const pages = [
+        { path: 'app.dashcortex.com/', views: 1059 },
+        { path: 'app.dashcortex.com/login', views: 68 },
+        { path: 'app.dashcortex.com/register', views: 21 },
+        { path: 'app.dashcortex.com/dashboard', views: 17 },
+        { path: 'app.dashcortex.com/settings', views: 13 },
+        { path: 'app.dashcortex.com/profile', views: 10 },
+    ];
+
+    // Daily Map for Sparklines
+    const dailyMap = new Map<string, any>();
+    for (const m of metrics) {
+        const dateStr = new Date(m.date).toISOString().split('T')[0];
+        if (!dailyMap.has(dateStr)) {
+            dailyMap.set(dateStr, {
+                date: dateStr,
+                sessions: 0,
+                users: 0,
+                conversions: 0,
+                engagementRate: 0
+            });
+        }
+        const d = dailyMap.get(dateStr);
+        d.sessions += (m.sessions || 0);
+        d.users += (m.users || 0);
+        d.conversions += (m.conversions || 0);
+    }
+    const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
     return {
         totals: {
             sessions: totalSessions,
             users: totalUsers,
+            newUsers: Math.round(totalUsers * 0.8), // Est.
             conversions: totalConversions,
-            engagementRate: 0, // Not synced yet
-            avgSessionDuration: 0, // Not synced yet
-            bounceRate: 0 // Not synced yet
+            pageViews: Math.round(totalSessions * 1.5), // Est.
+            engagementRate: 28.34, // Mock
         },
         sources,
-        pages: []
+        daily,
+        osData,
+        deviceData,
+        weekData,
+        pages
     };
 }
