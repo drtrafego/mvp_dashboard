@@ -299,7 +299,7 @@ const CampaignsTable = ({ campaigns }: { campaigns: CampaignMetric[] }) => {
 export default function MetaAdsDashboardV2({ totals, daily, campaigns, dateRangeLabel }: DashboardProps) {
 
     // Safety check for empty daily charts
-    const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], spend: 0, impressions: 0, clicks: 0, conversions: 0, value: 0 }];
+    const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], spend: 0, impressions: 0, clicks: 0, conversions: 0, value: 0, roas: 0 }];
 
     return (
         <div className="min-h-screen bg-black text-white p-6 md:p-8 space-y-8">
