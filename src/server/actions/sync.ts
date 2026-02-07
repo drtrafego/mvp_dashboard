@@ -86,6 +86,7 @@ export async function syncMetaAds(days = 30) {
             campaignId: item.campaignId,
             campaignName: item.campaignName,
             adId: item.adId,
+            adName: item.adName,
             // Unified Metrics
             impressions: Number(item.impressions) || 0,
             clicks: Number(item.clicks) || 0,

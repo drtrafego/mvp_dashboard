@@ -18,9 +18,11 @@ export type DashboardMetrics = {
         roas: number;
         value: number;
         cpm: number;
+        cpm: number;
         frequency: number;
     };
     campaigns: any[];
+    ads: any[];
     daily: any[];
 };
 
@@ -48,7 +50,10 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         conversionValue: campaignMetrics.conversionValue,
         date: campaignMetrics.date,
         cpm: campaignMetrics.cpm,
+        date: campaignMetrics.date,
+        cpm: campaignMetrics.cpm,
         frequency: campaignMetrics.frequency,
+        adName: campaignMetrics.adName,
     })
         .from(campaignMetrics)
         .innerJoin(integrations, eq(campaignMetrics.integrationId, integrations.id))
@@ -72,6 +77,8 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
     const dailyMap = new Map<string, any>();
     // Campaign Map for Table
     const campaignMap = new Map<string, any>();
+    // Ad Map for Pie Chart
+    const adMap = new Map<string, any>();
 
     for (const m of metrics) {
         const dateStr = new Date(m.date).toISOString().split('T')[0];
@@ -131,6 +138,25 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         c.clicks += clicks;
         c.conversions += conv;
         c.value += val;
+
+        // Ad Grouping
+        const adName = m.adName || "Unknown Ad";
+        if (!adMap.has(adName)) {
+            adMap.set(adName, {
+                name: adName,
+                spend: 0,
+                impressions: 0,
+                clicks: 0,
+                conversions: 0,
+                value: 0
+            });
+        }
+        const a = adMap.get(adName);
+        a.spend += spend;
+        a.impressions += imps;
+        a.clicks += clicks;
+        a.conversions += conv;
+        a.value += val;
     }
 
     // Calculations
@@ -146,6 +172,11 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         cpa: c.conversions > 0 ? c.spend / c.conversions : 0,
         roas: c.spend > 0 ? c.value / c.spend : 0,
     })).sort((a, b) => b.spend - a.spend);
+
+    const ads = Array.from(adMap.values()).map(a => ({
+        ...a,
+        roas: a.spend > 0 ? a.value / a.spend : 0,
+    })).sort((a, b) => b.conversions - a.conversions); // Sort by conversions for "Best Ads"
 
     const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
@@ -164,6 +195,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
             frequency: 1.2, // Placeholder average, as we don't have weighted avg logic yet for multiple campaigns
         },
         campaigns,
+        ads,
         daily
     };
 }

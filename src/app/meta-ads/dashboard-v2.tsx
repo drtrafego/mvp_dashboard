@@ -46,7 +46,9 @@ type DashboardProps = {
         frequency: number;
     };
     daily: DailyMetric[];
+    daily: DailyMetric[];
     campaigns: CampaignMetric[];
+    ads: CampaignMetric[]; // Reusing type as structure is identical
     dateRangeLabel: string;
 };
 
@@ -410,7 +412,7 @@ const MainChart = ({ data }: { data: DailyMetric[] }) => {
 
 // --- Main Layout ---
 
-export default function MetaAdsDashboardV2({ totals, daily, campaigns, dateRangeLabel }: DashboardProps) {
+export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, dateRangeLabel }: DashboardProps) {
 
     // Safety check for empty daily charts
     const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], spend: 0, impressions: 0, clicks: 0, conversions: 0, value: 0, roas: 0 }];
@@ -556,8 +558,8 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, dateRange
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.roas > 2 ? 'bg-green-900/30 text-green-400' :
-                                                    c.roas > 1 ? 'bg-yellow-900/30 text-yellow-500' :
-                                                        'bg-red-900/30 text-red-500'
+                                                c.roas > 1 ? 'bg-yellow-900/30 text-yellow-500' :
+                                                    'bg-red-900/30 text-red-500'
                                                 }`}>
                                                 {c.roas.toFixed(2)}
                                             </span>

@@ -52,13 +52,14 @@ function NotConnectedState({ platform }: { platform: string }) {
 import MetaAdsDashboardV2 from "./dashboard-v2";
 
 async function MetaAdsContent() {
-    const { totals, daily, campaigns } = await getMetaAdsMetrics(90);
+    const { totals, daily, campaigns, ads } = await getMetaAdsMetrics(90);
 
     return (
         <MetaAdsDashboardV2
             totals={totals}
             daily={daily}
             campaigns={campaigns}
+            ads={ads}
             dateRangeLabel="Últimos 90 Dias"
         />
     );
