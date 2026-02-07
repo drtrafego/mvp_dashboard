@@ -48,111 +48,18 @@ function NotConnectedState({ platform }: { platform: string }) {
     );
 }
 
+
+import MetaAdsDashboardV2 from "./dashboard-v2";
+
 async function MetaAdsContent() {
-    const { totals, campaigns } = await getMetaAdsMetrics(90);
-
-    const fmtMoney = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-    const fmtNum = (val: number) => new Intl.NumberFormat('pt-BR').format(val);
-    const fmtPct = (val: number) => val.toFixed(2) + "%";
+    const { totals, daily, campaigns } = await getMetaAdsMetrics(90);
 
     return (
-        <div className="space-y-6">
-            {/* Video Metrics (Placeholder for Phase 6b - using real calculated CTR/etc if available or 0) */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <MetricCard title="Hook Rate" value="-" subtitle="3s views / impressões" color="blue" />
-                <MetricCard title="Hold Rate" value="-" subtitle="75% views / 3s views" color="purple" />
-                <MetricCard title="ROAS" value={totals.roas.toFixed(2)} subtitle="Retorno sobre invest." color="indigo" />
-                <MetricCard title="CTR" value={fmtPct(totals.ctr)} subtitle="Cliques / Impressões" color="cyan" />
-            </div>
-
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <MetricCard title="Spend" value={fmtMoney(totals.spend)} color="gray" />
-                <MetricCard title="Impressões" value={fmtNum(totals.impressions)} color="gray" />
-                <MetricCard title="Cliques" value={fmtNum(totals.clicks)} color="gray" />
-                <MetricCard title="Conversões" value={fmtNum(totals.conversions)} color="gray" />
-                <MetricCard title="CPA" value={fmtMoney(totals.cpa)} color="gray" />
-            </div>
-
-            {/* Campaigns Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Campanhas (Últimos 30 dias)</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 dark:bg-gray-900/50">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Campanha</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Spend</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Impressões</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">CTR</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">CPA</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">ROAS</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {campaigns.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
-                                        Nenhum dado encontrado. Faça a sincronização em Configurações.
-                                    </td>
-                                </tr>
-                            ) : (
-                                campaigns.map((c, i) => (
-                                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium truncate max-w-xs" title={c.name}>{c.name}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-right">{fmtMoney(c.spend)}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-right">{fmtNum(c.impressions)}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-right">{fmtPct(c.ctr)}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-right">{fmtMoney(c.cpa)}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-right">{c.roas.toFixed(2)}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* AI Creative Analysis */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white">
-                <div className="flex items-center gap-3 mb-3">
-                    <span className="text-2xl">🎨</span>
-                    <h3 className="text-xl font-bold">Análise de Criativos (AI)</h3>
-                </div>
-                <p className="text-white/80">
-                    Correlação entre Hook Rate e CPA será analisada aqui. Criativos com alto Hook Rate e baixo CPA serão destacados.
-                </p>
-            </div>
-        </div>
-    );
-}
-
-function MetricCard({
-    title,
-    value,
-    subtitle,
-    color,
-}: {
-    title: string;
-    value: string;
-    subtitle?: string;
-    color: string;
-}) {
-    const colorClasses: Record<string, string> = {
-        blue: "border-blue-500",
-        purple: "border-purple-500",
-        indigo: "border-indigo-500",
-        cyan: "border-cyan-500",
-        gray: "border-gray-200",
-    };
-
-    return (
-        <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border-l-4 ${colorClasses[color] || "border-gray-200 dark:border-gray-700"} p-4 transition-colors`}>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-            {subtitle && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subtitle}</p>}
-        </div>
+        <MetaAdsDashboardV2
+            totals={totals}
+            daily={daily}
+            campaigns={campaigns}
+            dateRangeLabel="Últimos 90 Dias"
+        />
     );
 }

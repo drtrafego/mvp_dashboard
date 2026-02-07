@@ -16,8 +16,10 @@ export type DashboardMetrics = {
         cpc: number;
         cpa: number;
         roas: number;
+        value: number;
     };
     campaigns: any[];
+    daily: any[];
 };
 
 export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
@@ -54,27 +56,50 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
     // Aggregation (in memory because numeric fields handle easier in JS for small datasets, 
     // but for scale we should use SQL SUM. For MVP/30days, memory is fine/fast.)
 
+    // Aggregation
     let totalSpend = 0;
     let totalImpressions = 0;
     let totalClicks = 0;
     let totalConversions = 0;
     let totalConversionValue = 0;
 
-    // Group by Campaign for Table
+    // Daily Map for Charts
+    const dailyMap = new Map<string, any>();
+    // Campaign Map for Table
     const campaignMap = new Map<string, any>();
 
     for (const m of metrics) {
+        const dateStr = new Date(m.date).toISOString().split('T')[0];
         const spend = Number(m.spend);
         const imps = m.impressions || 0;
         const clicks = m.clicks || 0;
         const conv = m.conversions || 0;
         const val = Number(m.conversionValue) || 0;
 
+        // Totals
         totalSpend += spend;
         totalImpressions += imps;
         totalClicks += clicks;
         totalConversions += conv;
         totalConversionValue += val;
+
+        // Daily Grouping
+        if (!dailyMap.has(dateStr)) {
+            dailyMap.set(dateStr, {
+                date: dateStr,
+                spend: 0,
+                impressions: 0,
+                clicks: 0,
+                conversions: 0,
+                value: 0
+            });
+        }
+        const d = dailyMap.get(dateStr);
+        d.spend += spend;
+        d.impressions += imps;
+        d.clicks += clicks;
+        d.conversions += conv;
+        d.value += val;
 
         // Campaign Grouping
         const name = m.campaignName || "Unknown";
@@ -108,7 +133,9 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
         cpa: c.conversions > 0 ? c.spend / c.conversions : 0,
         roas: c.spend > 0 ? c.value / c.spend : 0,
-    })).sort((a, b) => b.spend - a.spend); // Sort by Spend DESC
+    })).sort((a, b) => b.spend - a.spend);
+
+    const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
     return {
         totals: {
@@ -116,11 +143,13 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
             impressions: totalImpressions,
             clicks: totalClicks,
             conversions: totalConversions,
+            value: totalConversionValue,
             ctr: avgCTR,
             cpc: avgCPC,
             cpa: avgCPA,
             roas: avgROAS,
         },
-        campaigns
+        campaigns,
+        daily
     };
 }
