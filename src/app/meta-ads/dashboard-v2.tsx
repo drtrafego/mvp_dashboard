@@ -137,7 +137,7 @@ const FunnelChart = ({
                 <div className="p-2 bg-gray-800 rounded-lg">
                     <span className="text-xs text-gray-400">Taxa de Conversão da Loja: </span>
                     <span className="text-sm font-bold text-green-400 ml-1">
-                        {impressions > 0 ? ((conversions / clicks) * 100).toFixed(2) : 0}% (Click -> Purch)
+                        {impressions > 0 ? ((conversions / clicks) * 100).toFixed(2) : 0}% (Click &rarr; Purch)
                     </span>
                 </div>
             </div>
@@ -278,8 +278,8 @@ const CampaignsTable = ({ campaigns }: { campaigns: CampaignMetric[] }) => {
                                 </td>
                                 <td className="p-4 text-right">
                                     <span className={`px-2 py-1 rounded text-xs font-bold ${c.roas > 2 ? 'bg-green-900/30 text-green-400' :
-                                            c.roas > 1 ? 'bg-yellow-900/30 text-yellow-400' :
-                                                'bg-red-900/30 text-red-400'
+                                        c.roas > 1 ? 'bg-yellow-900/30 text-yellow-400' :
+                                            'bg-red-900/30 text-red-400'
                                         }`}>
                                         {c.roas.toFixed(2)}x
                                     </span>
