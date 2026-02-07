@@ -43,6 +43,7 @@ type AnalyticsDashboardProps = {
         newUsers: number;
         pageViews: number;
         engagementRate: number;
+        conversions: number;
     };
     daily: DailyAnalytics[];
     sources: AnalyticsSource[];
@@ -144,6 +145,10 @@ const BrazilMapMock = () => (
 
 // --- Main Layout ---
 
+import { syncGA4 } from "@/server/actions/sync-google";
+
+// ... (existing imports)
+
 export default function AnalyticsDashboard({
     totals,
     daily,
@@ -154,6 +159,25 @@ export default function AnalyticsDashboard({
     weekData,
     dateRangeLabel
 }: AnalyticsDashboardProps) {
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSync = async () => {
+        setIsSyncing(true);
+        try {
+            const result = await syncGA4();
+            if (result.success) {
+                alert(`Sucesso: ${result.message}`);
+                window.location.reload();
+            } else {
+                alert(`Erro: ${result.error}`);
+            }
+        } catch (error) {
+            alert("Erro na chamada de sincronização.");
+            console.error(error);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     // Safety check for empty daily charts
     const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], sessions: 0, users: 0, conversions: 0, engagementRate: 0 }];
@@ -176,6 +200,15 @@ export default function AnalyticsDashboard({
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                        {isSyncing ? "Sincronizando..." : "Sincronizar Agora"}
+                    </button>
+
                     {/* Mock Filters */}
                     <button className="flex items-center gap-2 bg-[#0f111a] border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-sm hover:text-white transition">
                         Cidade <ArrowDown size={14} />

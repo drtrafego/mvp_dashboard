@@ -14,6 +14,7 @@ export type AnalyticsMetrics = {
         newUsers: number;
         pageViews: number;
         engagementRate: number;
+        conversions: number;
     };
     daily: any[];
     sources: any[];
@@ -56,6 +57,13 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
     let totalSessions = 0;
     let totalUsers = 0;
     let totalConversions = 0;
+
+    // Calculate Totals from basic metrics (most reliable)
+    for (const m of metrics) {
+        totalSessions += (m.sessions || 0);
+        totalUsers += (m.users || 0);
+        totalConversions += (m.conversions || 0);
+    }
 
     // Aggregation for Sources (using Dimensions table if avaiable or fallback to campaignMetrics)
     // We will query analyticsDimensions for all breakdowns
