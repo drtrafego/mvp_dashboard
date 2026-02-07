@@ -14,8 +14,8 @@ export function DebugControls() {
         try {
             const res = await debugForceSync(provider);
             if (res.success) {
-                setStatus(`✅ Sync Success! ${JSON.stringify(res.result)}`);
-                window.location.reload(); // Refresh to see data
+                setStatus(`✅ Sync Success! ${JSON.stringify(res.result)}. Refreshing in 3s...`);
+                setTimeout(() => window.location.reload(), 3000);
             } else {
                 setStatus(`❌ Sync Failed: ${res.error}`);
             }

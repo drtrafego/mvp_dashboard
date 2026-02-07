@@ -53,7 +53,7 @@ export default async function DebugGA4Page() {
     const maskedDb = dbUrl.length > 20 ? dbUrl.substring(0, 15) + "..." : dbUrl;
 
     return (
-        <div className="p-10 space-y-8 font-mono text-sm">
+        <div className="p-10 space-y-8 font-mono text-sm min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
             <h1 className="text-2xl font-bold text-orange-600">🕵️‍♂️ Google Analytics Debugger (GA4)</h1>
 
             <section className="border p-4 rounded bg-gray-50">
