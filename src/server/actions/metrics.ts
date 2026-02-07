@@ -91,7 +91,8 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
                 impressions: 0,
                 clicks: 0,
                 conversions: 0,
-                value: 0
+                value: 0,
+                roas: 0
             });
         }
         const d = dailyMap.get(dateStr);
@@ -100,6 +101,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         d.clicks += clicks;
         d.conversions += conv;
         d.value += val;
+        d.roas = d.spend > 0 ? d.value / d.spend : 0;
 
         // Campaign Grouping
         const name = m.campaignName || "Unknown";
