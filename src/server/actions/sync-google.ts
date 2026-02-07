@@ -204,9 +204,9 @@ export async function syncGA4() {
                     date: parsedDate,
                     campaignName: item.campaign === '(not set)' ? 'Direto/Orgânico' : item.campaign,
                     // GA4 Metrics mapping
-                    sessions: item.sessions,
-                    activeUsers: item.users,
-                    conversions: item.conversions,
+                    sessions: Math.round(Number(item.sessions || 0)),
+                    activeUsers: Math.round(Number(item.users || 0)),
+                    conversions: Math.round(Number(item.conversions || 0)),
                     // Store Source/Medium in flexible fields or if strictly needed, we might need schema update.
                     // For now, we rely on campaignName.
                     // We can use 'adSetId' or 'adId' to store source/medium temporarily if needed, 

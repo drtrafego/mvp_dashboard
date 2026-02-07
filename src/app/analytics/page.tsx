@@ -1,5 +1,6 @@
 
 import { getAnalyticsMetrics } from "@/server/actions/analytics";
+import { getAdAccountSettings } from "@/server/actions/ad-account-settings";
 
 export default async function AnalyticsPage() {
     const settings = await getAdAccountSettings();
