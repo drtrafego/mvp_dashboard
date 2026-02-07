@@ -1,4 +1,5 @@
-import { getAdAccountSettings } from "@/server/actions/ad-account-settings";
+
+import { getAnalyticsMetrics } from "@/server/actions/analytics";
 
 export default async function AnalyticsPage() {
     const settings = await getAdAccountSettings();
@@ -47,89 +48,48 @@ function NotConnectedState() {
     );
 }
 
-function AnalyticsContent() {
+async function AnalyticsContent() {
+    // FETCH REAL DATA (90 Days)
+    const { totals, sources } = await getAnalyticsMetrics(90);
+
+    const fmtNum = (val: number) => new Intl.NumberFormat('pt-BR').format(val);
+
     return (
         <div className="space-y-6">
             {/* GA4 Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <MetricCard title="Sessões" value="0" subtitle="Últimos 30 dias" color="orange" />
-                <MetricCard title="Sessões Engajadas" value="0" subtitle=">10s, 2+ pageviews, ou conversão" color="green" />
-                <MetricCard title="Tempo Médio" value="0:00" subtitle="Engajamento médio" color="blue" />
-                <MetricCard title="Taxa de Engajamento" value="0%" subtitle="Engajadas / Total" color="purple" />
+                <MetricCard title="Sessões" value={fmtNum(totals.sessions)} subtitle="Últimos 90 dias" color="orange" />
+                <MetricCard title="Usuários Ativos" value={fmtNum(totals.users)} subtitle="Visitantes únicos" color="blue" />
+                <MetricCard title="Conversões" value={fmtNum(totals.conversions)} subtitle="Eventos principais" color="green" />
+                <MetricCard title="Sessões/Usuário" value={totals.users > 0 ? (totals.sessions / totals.users).toFixed(2) : "0"} subtitle="Média" color="purple" />
             </div>
 
             {/* Traffic Sources */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">Fontes de Tráfego</h3>
-                    <div className="space-y-3">
-                        <TrafficSourceBar source="google / cpc" sessions={0} percentage={0} color="red" />
-                        <TrafficSourceBar source="facebook / paid" sessions={0} percentage={0} color="blue" />
-                        <TrafficSourceBar source="(direct) / (none)" sessions={0} percentage={0} color="gray" />
-                        <TrafficSourceBar source="google / organic" sessions={0} percentage={0} color="green" />
-                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-4">Fontes de Tráfego (Campanhas)</h3>
+                    {sources.length === 0 ? (
+                        <p className="text-gray-500">Nenhum dado de origem encontrado.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {sources.slice(0, 5).map((s, i) => (
+                                <TrafficSourceBar
+                                    key={i}
+                                    source={s.name}
+                                    sessions={s.sessions}
+                                    percentage={s.percentage}
+                                    color={["blue", "green", "purple", "orange", "gray"][i % 5]}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 className="font-semibold text-gray-900 mb-4">Dispositivos</h3>
-                    <div className="space-y-3">
-                        <TrafficSourceBar source="📱 Mobile" sessions={0} percentage={0} color="blue" />
-                        <TrafficSourceBar source="💻 Desktop" sessions={0} percentage={0} color="purple" />
-                        <TrafficSourceBar source="📟 Tablet" sessions={0} percentage={0} color="green" />
+                    <div className="flex items-center justify-center h-40 text-gray-400">
+                        Dados de dispositivo não sincronizados ainda.
                     </div>
-                </div>
-            </div>
-
-            {/* Top Pages */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-900">Top Páginas</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Página</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Views</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sessões</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tempo Médio</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Taxa Rejeição</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            <tr>
-                                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                                    Dados serão carregados após sincronização com GA4.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Conversion Events */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-900">Eventos de Conversão</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Evento</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Contagem</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Sessões</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Taxa Conversão</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            <tr>
-                                <td colSpan={4} className="px-4 py-8 text-center text-gray-400">
-                                    Configure eventos de conversão no GA4 para ver dados aqui.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -180,11 +140,12 @@ function TrafficSourceBar({
         gray: "bg-gray-400",
         green: "bg-green-500",
         purple: "bg-purple-500",
+        orange: "bg-orange-500",
     };
 
     return (
         <div className="flex items-center gap-3">
-            <div className="w-32 text-sm text-gray-700 truncate">{source}</div>
+            <div className="w-32 text-sm text-gray-700 truncate" title={source}>{source}</div>
             <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
                     className={`h-full ${colorClasses[color] || "bg-gray-400"} rounded-full`}

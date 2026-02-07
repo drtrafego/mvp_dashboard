@@ -140,7 +140,7 @@ export async function syncGA4() {
         if (!user || !user.organizationId) return { success: false, error: "Usuário sem organização" };
         const orgId = user.organizationId;
 
-        await logSystem(orgId, "GA4", "INFO", "Iniciando sincronização (120 dias)...");
+        await logSystem(orgId, "GA4", "INFO", "Iniciando sincronização (90 dias)...");
 
         const settings = await biDb.query.adAccountSettings.findFirst({
             where: eq(adAccountSettings.organizationId, orgId),
@@ -176,10 +176,10 @@ export async function syncGA4() {
         }
 
         try {
-            const data = await getGA4Data(accessToken, propertyId, 30);
+            const data = await getGA4Data(accessToken, propertyId, 90);
 
             // 4. Persistence
-            const startDate = subDays(new Date(), 30);
+            const startDate = subDays(new Date(), 90);
 
 
 
