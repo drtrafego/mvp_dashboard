@@ -37,12 +37,6 @@ export default function Topbar({ userName, userImage, onMenuClick }: Props) {
                 </button>
 
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 hidden sm:block">Dashboard</h2>
-
-                {showDatePicker && (
-                    <div className="ml-4">
-                        <DatePickerWithRange />
-                    </div>
-                )}
             </div>
 
             <div className="flex items-center gap-4">

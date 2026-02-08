@@ -42,12 +42,18 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // Define Date Range
     // Use UTC boundaries to match DB storage (usually 00:00:00 UTC)
     // If 'from' is 2023-10-27, we want 2023-10-27T00:00:00.000Z
-    const endDate = to ? new Date(`${to}T23:59:59.999Z`) : new Date();
-    const startDate = from ? new Date(`${from}T00:00:00.000Z`) : subDays(new Date(), 90);
+    // If 'to' is 2023-10-27, we want 2023-10-27T23:59:59.999Z
+    // If no 'to' is provided, we want NO W (end of today UTC)
 
-    console.log(`[getAnalyticsMetrics] Fetching for Org: ${orgId}`);
-    console.log(`[getAnalyticsMetrics] Inputs - From: ${from}, To: ${to}`);
-    console.log(`[getAnalyticsMetrics] Query Range - Start: ${startDate.toISOString()}, End: ${endDate.toISOString()}`);
+    // FIX: Ensure we don't default to "start of today" for end date, we want "NOW" or "End of Today"
+    const endDate = to ? new Date(`${to}T23:59:59.999Z`) : new Date();
+
+    // FIX: Default start date should be 30 days ago, not 90, to match UI default if undefined
+    const startDate = from ? new Date(`${from}T00:00:00.000Z`) : subDays(new Date(), 30);
+
+    console.log(`[getAnalyticsMetrics] Org: ${orgId}`);
+    console.log(`[getAnalyticsMetrics] Raw From: ${from}, Raw To: ${to}`);
+    console.log(`[getAnalyticsMetrics] Query Window: ${startDate.toISOString()} TO ${endDate.toISOString()}`);
 
     // Fetch GA4 Data
     const metrics = await biDb.select({
