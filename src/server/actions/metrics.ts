@@ -80,7 +80,6 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
     let totalClicks = 0;
     let totalConversions = 0;
     let totalLeads = 0; // Added
-    let totalLeads = 0; // Added
     let totalConversionValue = 0;
     let totalVideoViews3s = 0;
     let totalVideoThruplays = 0;
