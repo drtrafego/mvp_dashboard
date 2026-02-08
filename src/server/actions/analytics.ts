@@ -10,6 +10,24 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // ... (types remain the same)
+export type AnalyticsMetrics = {
+    totals: {
+        sessions: number;
+        users: number;
+        newUsers: number;
+        pageViews: number;
+        engagementRate: number;
+        conversions: number;
+    };
+    daily: any[];
+    sources: any[];
+    pages: any[];
+    osData: any[];
+    deviceData: any[];
+    weekData: any[];
+    cityData: any[];
+    regionData: any[];
+};
 
 export async function getAnalyticsMetrics(from?: string, to?: string): Promise<AnalyticsMetrics> {
     const session = await auth();
