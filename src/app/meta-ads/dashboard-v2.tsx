@@ -265,6 +265,7 @@ const TrafficFunnel = ({
                 </div>
 
                 {/* Metrics List (Right Side - Absolute/Fixed pos relative to container) */}
+                {/* Metrics List (Right Side) */}
                 <div className="absolute right-4 top-16 bottom-20 flex flex-col justify-between py-4 text-right z-20">
                     <div className="flex flex-col items-end">
                         <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Cliques</div>
@@ -279,19 +280,21 @@ const TrafficFunnel = ({
                         <div className="text-xl font-bold text-white">{checkoutRate.toFixed(2)}%</div>
                     </div>
                     <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Compras</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de {label}</div>
                         <div className="text-xl font-bold text-white">{purchaseRate.toFixed(2)}%</div>
                     </div>
                 </div>
 
             </div>
 
-            {/* Footer Metrics (Bottom Cards - Aligned Grid) */}
-            <div className="grid grid-cols-3 gap-2 mt-2 pt-4 border-t border-gray-800/50">
-                <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
-                    <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Add to Cart</div>
-                    <div className="text-base font-bold text-white">0</div>
-                </div>
+            {/* Footer Metrics (Bottom Cards) */}
+            <div className={`grid ${label === 'Leads' ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-2 pt-4 border-t border-gray-800/50`}>
+                {label !== 'Leads' && (
+                    <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
+                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Add to Cart</div>
+                        <div className="text-base font-bold text-white">0</div>
+                    </div>
+                )}
                 <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
                     <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Frequência</div>
                     <div className="text-base font-bold text-white">{frequency > 0 ? frequency.toFixed(2) : "1.12"}</div>

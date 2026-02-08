@@ -33,7 +33,7 @@ async function MetaAdsContent({ searchParams }: { searchParams?: { from?: string
     const { totals, daily, campaigns, ads } = await getMetaAdsMetrics(searchParams?.from, searchParams?.to);
 
     const dateRangeLabel = searchParams?.from && searchParams?.to
-        ? `${new Date(searchParams.from).toLocaleDateString()} - ${new Date(searchParams.to).toLocaleDateString()}`
+        ? `${new Date(searchParams.from).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - ${new Date(searchParams.to).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
         : "Últimos 30 Dias";
 
     return (
