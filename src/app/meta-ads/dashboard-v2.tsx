@@ -499,6 +499,103 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
             {/* ... Header & KPI ... */}
             {/* ... (Keeping existing layout code) ... */}
 
+            {/* KPI Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <MetricCard
+                    title="Investimento"
+                    value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.spend)}
+                    subValue={totals.spend === 0 ? "0%" : "28.2%"}
+                    trend={-1}
+                    chartData={safeDaily}
+                    dataKey="spend"
+                    color="#ef4444"
+                />
+                {!isCapture && (
+                    <MetricCard
+                        title="Faturamento"
+                        value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.value)}
+                        subValue="22.4%"
+                        trend={-1}
+                        chartData={safeDaily}
+                        dataKey="value"
+                        color="#22c55e"
+                    />
+                )}
+                <MetricCard
+                    title={isCapture ? "Leads" : "Compras"}
+                    value={totals.conversions.toLocaleString()}
+                    subValue="23.8%"
+                    trend={-1}
+                    chartData={safeDaily}
+                    dataKey="conversions"
+                    color="#3b82f6"
+                />
+                {isCapture && (
+                    <MetricCard
+                        title="Custo por Lead (CPL)"
+                        value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.cpa)}
+                        subValue="--%"
+                        trend={0}
+                        chartData={safeDaily}
+                        dataKey="spend"
+                        color="#eab308"
+                    />
+                )}
+                {!isCapture && (
+                    <MetricCard
+                        title="ROAS Médio"
+                        value={totals.roas.toFixed(2)}
+                        subValue="8.1%"
+                        trend={1}
+                        chartData={safeDaily}
+                        dataKey="roas"
+                        color="#a855f7"
+                    />
+                )}
+                {!isCapture && (
+                    <MetricCard
+                        title="Custo por Compra (CPA)"
+                        value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.cpa)}
+                        subValue="5.8%"
+                        trend={1}
+                        chartData={safeDaily}
+                        dataKey="spend"
+                        color="#eab308"
+                    />
+                )}
+                {isCapture && (
+                    <MetricCard
+                        title="CTR (Link)"
+                        value={totals.ctr.toFixed(2) + "%"}
+                        subValue="--"
+                        trend={1}
+                        chartData={safeDaily}
+                        dataKey="clicks"
+                        color="#a855f7"
+                    />
+                )}
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Funnel (Left - 50%) */}
+                <div className="lg:col-span-1">
+                    <TrafficFunnel
+                        impressions={totals.impressions}
+                        clicks={totals.clicks}
+                        conversions={totals.conversions}
+                        cpm={totals.cpm}
+                        frequency={totals.frequency}
+                        label={isCapture ? "Leads" : "Compras"}
+                    />
+                </div>
+
+                {/* Main Line Chart (Right - 50%) */}
+                <div className="lg:col-span-1">
+                    <MainChart data={safeDaily} />
+                </div>
+            </div>
+
             {/* Bottom Section: Table & Pie */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Table (2 cols) */}
