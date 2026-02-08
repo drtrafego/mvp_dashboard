@@ -18,7 +18,6 @@ export type DashboardMetrics = {
         roas: number;
         value: number;
         cpm: number;
-        cpm: number;
         frequency: number;
     };
     campaigns: any[];
