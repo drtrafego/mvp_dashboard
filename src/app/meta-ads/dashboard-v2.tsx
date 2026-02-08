@@ -666,20 +666,35 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                                     {activeTab === 'campaigns' && isCapture && (
                                         <th className="px-4 py-3 font-medium bg-[#0f111a]">Melhor Anúncio</th>
                                     )}
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Investimento</th>
                                     <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Impressões</th>
                                     <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Cliques</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Pg Views</th> {/* New Header */}
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">CTR</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Pg Views</th>
                                     <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'Leads' : 'Compras'}</th>
                                     <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'CPL' : 'CPA'}</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'CTR' : 'ROAS'}</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'CTR (L)' : 'ROAS'}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800/50 text-sm">
                                 {tableData.map((item, i) => {
                                     // Use type-safe properties now that CampaignMetric has them
                                     const resultVal = isCapture ? item.leads || 0 : item.conversions;
-                                    const costVal = isCapture ? item.cpa : item.cpa; // CPL is CPA here
-                                    const finalVal = isCapture ? item.ctr : item.roas;
+                                    const costVal = isCapture ? (item.leads > 0 ? item.spend / item.leads : 0) : item.cpa; // Calculate CPL dynamically if needed
+                                    const finalVal = isCapture ? item.ctr : item.roas; // Not displaying CTR again at end, maybe ROAS or empty for Capture? 
+                                    // Actually user screenshot shows a last column.
+                                    // Let's stick to the Body Order:
+                                    // 1. Spend
+                                    // 2. Impressions
+                                    // 3. Clicks
+                                    // 4. CTR (Link Click CTR)
+                                    // 5. Page Views
+                                    // 6. Leads
+                                    // 7. CPL
+                                    // 8. ROAS (or something else for capture) - User screenshot had CTR at end? 
+                                    // Let's make the last column ROAS for Sales, and maybe Hook Rate or nothing for Capture? 
+                                    // User screenshot showed 'CTR' at the end. But they already have CTR in col 4.
+                                    // Let's match the columns I defined in Header above.
 
                                     // Find Best Ad for this Campaign (if in Campaign tab & capture mode)
                                     let bestAdName = "--";
