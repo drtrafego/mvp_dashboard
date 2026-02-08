@@ -6,7 +6,7 @@ import {
     PieChart, Pie, Cell // Added Cell if used, or remove if not
 } from "recharts";
 import { HelpCircle, RefreshCw } from "lucide-react";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { DatePickerWithRange } from "../../components/ui/date-range-picker";
 
 // --- Types ---
 type DailyMetric = {
@@ -485,8 +485,6 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
 
     const roasVals = isCapture ? safeMap(tableData, 'ctr') : safeMap(tableData, 'roas');
     const maxRoas = Math.max(...roasVals, 0);
-    const minRoas = Math.min(...roasVals, 0);
-
     const minRoas = Math.min(...roasVals, 0);
 
 
