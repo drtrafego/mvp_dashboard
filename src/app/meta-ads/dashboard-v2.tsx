@@ -17,6 +17,7 @@ type DailyMetric = {
     conversions: number;
     value: number;
     roas: number;
+    leads?: number;
 };
 
 type CampaignMetric = {
