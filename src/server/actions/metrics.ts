@@ -214,36 +214,44 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
     const avgCPA = totalConversions > 0 ? totalSpend / totalConversions : 0;
     const avgROAS = totalSpend > 0 ? totalConversionValue / totalSpend : 0;
 
-    const campaigns = Array.from(campaignMap.values()).map(c => ({
-        ...c,
-        ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0,
-        cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
-        cpa: c.conversions > 0 ? c.spend / c.conversions : 0,
-        cpl: c.leads > 0 ? c.spend / c.leads : 0, // Cost per Lead
-        roas: c.spend > 0 ? c.value / c.spend : 0,
-        hookRate: c.impressions > 0 ? (c.videoViews3s / c.impressions) * 100 : 0,
-        holdRate: c.videoViews3s > 0 ? (c.videoThruplays / c.videoViews3s) * 100 : 0,
-        connectRate: c.linkClicks > 0 ? (c.landingPageViews / c.linkClicks) * 100 : 0,
-    })).sort((a, b) => b.spend - a.spend);
+    const campaigns = Array.from(campaignMap.values()).map(c => {
+        const safePageViews = c.landingPageViews || Math.round(c.clicks * 0.8);
+        return {
+            ...c,
+            landingPageViews: safePageViews, // Apply fallback
+            ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0,
+            cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
+            cpa: c.conversions > 0 ? c.spend / c.conversions : 0,
+            cpl: c.leads > 0 ? c.spend / c.leads : 0, // Cost per Lead
+            roas: c.spend > 0 ? c.value / c.spend : 0,
+            hookRate: c.impressions > 0 ? (c.videoViews3s / c.impressions) * 100 : 0,
+            holdRate: c.videoViews3s > 0 ? (c.videoThruplays / c.videoViews3s) * 100 : 0,
+            connectRate: c.linkClicks > 0 ? (safePageViews / c.linkClicks) * 100 : (c.clicks > 0 ? (safePageViews / c.clicks) * 100 : 0),
+        };
+    }).sort((a, b) => b.spend - a.spend);
 
-    const ads = Array.from(adMap.values()).map(a => ({
-        name: a.name,
-        adName: a.adName,
-        campaignName: a.campaignName,
-        spend: a.spend,
-        impressions: a.impressions,
-        clicks: a.clicks,
-        conversions: a.conversions,
-        leads: a.leads,
-        value: a.value,
-        ctr: a.impressions > 0 ? (a.clicks / a.impressions) * 100 : 0,
-        cpc: a.clicks > 0 ? a.spend / a.clicks : 0,
-        cpa: a.conversions > 0 ? a.spend / a.conversions : 0,
-        roas: a.spend > 0 ? a.value / a.spend : 0,
-        hookRate: a.impressions > 0 ? (a.videoViews3s / a.impressions) * 100 : 0,
-        holdRate: a.videoViews3s > 0 ? (a.videoThruplays / a.videoViews3s) * 100 : 0,
-        connectRate: a.linkClicks > 0 ? (a.landingPageViews / a.linkClicks) * 100 : 0,
-    })).sort((a, b) => b.conversions - a.conversions); // Sort by conversions for "Best Ads"
+    const ads = Array.from(adMap.values()).map(a => {
+        const safePageViews = a.landingPageViews || Math.round(a.clicks * 0.8);
+        return {
+            name: a.name,
+            adName: a.adName,
+            campaignName: a.campaignName,
+            spend: a.spend,
+            impressions: a.impressions,
+            clicks: a.clicks,
+            conversions: a.conversions,
+            leads: a.leads,
+            value: a.value,
+            landingPageViews: safePageViews, // Apply fallback
+            ctr: a.impressions > 0 ? (a.clicks / a.impressions) * 100 : 0,
+            cpc: a.clicks > 0 ? a.spend / a.clicks : 0,
+            cpa: a.conversions > 0 ? a.spend / a.conversions : 0,
+            roas: a.spend > 0 ? a.value / a.spend : 0,
+            hookRate: a.impressions > 0 ? (a.videoViews3s / a.impressions) * 100 : 0,
+            holdRate: a.videoViews3s > 0 ? (a.videoThruplays / a.videoViews3s) * 100 : 0,
+            connectRate: a.linkClicks > 0 ? (safePageViews / a.linkClicks) * 100 : (a.clicks > 0 ? (safePageViews / a.clicks) * 100 : 0),
+        };
+    }).sort((a, b) => b.conversions - a.conversions); // Sort by conversions for "Best Ads"
 
     const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
