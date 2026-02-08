@@ -191,6 +191,7 @@ export default function AnalyticsDashboard({
         <div className="min-h-screen bg-[#050505] text-gray-200 p-6 md:p-8 space-y-6 font-sans">
 
             {/* Header */}
+            {/* Header */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
                 <div className="flex items-center gap-4">
                     <span className="text-4xl">📊</span>
@@ -198,9 +199,9 @@ export default function AnalyticsDashboard({
                         <div className="flex items-center gap-2">
                             <h1 className="text-2xl font-bold tracking-tight text-white">Analytics</h1>
                         </div>
-                        <p className="text-gray-500 text-sm flex items-center gap-2 mt-1">
-                            Google Analytics 4 <span className="text-gray-600">|</span> {dateRangeLabel}
-                        </p>
+                        <div className="mt-1">
+                            <DatePickerWithRange />
+                        </div>
                     </div>
                 </div>
 
@@ -221,10 +222,6 @@ export default function AnalyticsDashboard({
                     <button className="flex items-center gap-2 bg-[#0f111a] border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-sm hover:text-white transition">
                         Região <ArrowDown size={14} />
                     </button>
-
-                    <div className="flex items-center gap-3 bg-[#0f111a] p-1 rounded-lg border border-gray-800/50">
-                        <DatePickerWithRange />
-                    </div>
                 </div>
             </header>
 

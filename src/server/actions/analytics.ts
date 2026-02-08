@@ -22,8 +22,10 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     const orgId = user.organizationId;
 
     // Define Date Range
-    const endDate = to ? endOfDay(parseISO(to)) : endOfDay(new Date());
-    const startDate = from ? startOfDay(parseISO(from)) : startOfDay(subDays(new Date(), 90));
+    // Use UTC boundaries to match DB storage (usually 00:00:00 UTC)
+    // If 'from' is 2023-10-27, we want 2023-10-27T00:00:00.000Z
+    const endDate = to ? new Date(`${to}T23:59:59.999Z`) : new Date();
+    const startDate = from ? new Date(`${from}T00:00:00.000Z`) : subDays(new Date(), 90);
 
     // Fetch GA4 Data
     const metrics = await biDb.select({
