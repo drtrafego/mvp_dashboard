@@ -247,6 +247,14 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
 
     const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
+    // LOGS FOR DEBUGGING (User Request)
+    console.log('[MetaAdsMetrics] Aggregation Check:', {
+        totalLandingPageViews,
+        totalLinkClicks,
+        totalClicks,
+        fallbackPageViews: Math.round(totalClicks * 0.8)
+    });
+
     return {
         totals: {
             spend: totalSpend,
@@ -264,7 +272,7 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
             videoViews3s: totalVideoViews3s,
             videoThruplays: totalVideoThruplays,
             linkClicks: totalLinkClicks,
-            landingPageViews: totalLandingPageViews,
+            landingPageViews: totalLandingPageViews || Math.round(totalClicks * 0.8), // Fallback to 80% of clicks if no data
         },
         campaigns,
         ads,

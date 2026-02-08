@@ -583,36 +583,7 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                 />
             </div>
 
-            {/* Second Row: Video & Connect Metrics (Only for Capture/Lead Gen usually, but good for all) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <MetricCard
-                    title="Connect Rate"
-                    value={totals.linkClicks > 0 ? ((totals.landingPageViews / totals.linkClicks) * 100).toFixed(2) + "%" : "0.00%"}
-                    subValue="LP Views / Clicks"
-                    trend={0}
-                    chartData={safeDaily}
-                    dataKey="clicks" // Proxy
-                    color="#f472b6"
-                />
-                <MetricCard
-                    title="Hook Rate (3s)"
-                    value={totals.impressions > 0 ? ((totals.videoViews3s / totals.impressions) * 100).toFixed(2) + "%" : "0.00%"}
-                    subValue="3s / Impressions"
-                    trend={0}
-                    chartData={safeDaily}
-                    dataKey="impressions" // Proxy
-                    color="#2dd4bf"
-                />
-                <MetricCard
-                    title="Hold Rate"
-                    value={totals.videoViews3s > 0 ? ((totals.videoThruplays / totals.videoViews3s) * 100).toFixed(2) + "%" : "0.00%"}
-                    subValue="ThruPlay / 3s"
-                    trend={0}
-                    chartData={safeDaily}
-                    dataKey="impressions" // Proxy
-                    color="#fbbf24"
-                />
-            </div>
+
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
