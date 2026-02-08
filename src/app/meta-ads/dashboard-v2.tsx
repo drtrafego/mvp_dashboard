@@ -192,13 +192,15 @@ const TrafficFunnel = ({
     clicks,
     conversions,
     frequency,
-    cpm
+    cpm,
+    label = "Compras"
 }: {
     impressions: number;
     clicks: number;
     conversions: number;
     frequency: number;
     cpm: number;
+    label?: string;
 }) => {
 
     // Derived Metrics
