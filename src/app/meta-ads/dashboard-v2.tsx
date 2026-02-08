@@ -6,6 +6,7 @@ import {
     PieChart, Pie, Cell // Added Cell if used, or remove if not
 } from "recharts";
 import { HelpCircle, RefreshCw } from "lucide-react";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 // --- Types ---
 type DailyMetric = {
@@ -486,11 +487,21 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
     const maxRoas = Math.max(...roasVals, 0);
     const minRoas = Math.min(...roasVals, 0);
 
+    const minRoas = Math.min(...roasVals, 0);
+
 
     return (
         <div className="min-h-screen bg-[#050505] text-gray-200 p-6 md:p-8 space-y-6 font-sans">
-            {/* ... Header & KPI ... */}
-            {/* ... (Keeping existing layout code) ... */}
+            {/* Header with Title and Date Controls */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold text-white tracking-tight">Visão Geral</h2>
+                    <p className="text-gray-500 text-sm mt-1">Acompanhe seus indicadores de performance</p>
+                </div>
+                <div className="flex items-center gap-3 bg-[#0f111a] p-1 rounded-lg border border-gray-800/50">
+                    <DatePickerWithRange />
+                </div>
+            </div>
 
             {/* KPI Cards Row 1: Investment, Impressions, Clicks, CTR, Page Views, Leads */}
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
