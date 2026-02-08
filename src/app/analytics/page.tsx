@@ -9,6 +9,10 @@ export default async function AnalyticsPage(props: { searchParams: SearchParams 
     const from = typeof searchParams.from === 'string' ? searchParams.from : undefined
     const to = typeof searchParams.to === 'string' ? searchParams.to : undefined
 
+    console.log("--- Analytics Page Load ---");
+    console.log("SearchParams:", searchParams);
+    console.log("From:", from, "To:", to);
+
     const settings = await getAdAccountSettings();
     const isConnected = Boolean(settings?.ga4PropertyId);
 

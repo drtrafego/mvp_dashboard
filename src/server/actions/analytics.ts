@@ -45,6 +45,10 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     const endDate = to ? new Date(`${to}T23:59:59.999Z`) : new Date();
     const startDate = from ? new Date(`${from}T00:00:00.000Z`) : subDays(new Date(), 90);
 
+    console.log(`[getAnalyticsMetrics] Fetching for Org: ${orgId}`);
+    console.log(`[getAnalyticsMetrics] Inputs - From: ${from}, To: ${to}`);
+    console.log(`[getAnalyticsMetrics] Query Range - Start: ${startDate.toISOString()}, End: ${endDate.toISOString()}`);
+
     // Fetch GA4 Data
     const metrics = await biDb.select({
         date: campaignMetrics.date,
@@ -65,6 +69,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
                 lte(campaignMetrics.date, endDate)
             )
         ));
+
+    console.log(`[getAnalyticsMetrics] Metrics found: ${metrics.length}`);
 
     let totalSessions = 0;
     let totalUsers = 0;

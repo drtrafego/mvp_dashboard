@@ -285,29 +285,29 @@ export default function AnalyticsDashboard({
 
                     {/* Region Table */}
                     <Card className="h-[180px] !p-0 overflow-hidden">
-                        <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] flex justify-between">
+                        <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] flex justify-between items-center">
                             <span className="text-xs font-bold text-gray-400 uppercase">Localização</span>
+                            <span className="text-[10px] text-gray-600">v1.5 (Live)</span>
                             <span className="text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
                         </div>
                         <div className="overflow-y-auto h-full pb-8">
-                            {(cityData && cityData.length > 0 ? cityData : [
-                                { name: 'São Paulo', value: 942 },
-                                { name: 'Rio de Janeiro', value: 231 },
-                                { name: 'Belo Horizonte', value: 216 },
-                                { name: 'Brasília', value: 191 },
-                                { name: 'Goiânia', value: 171 },
-                            ]).map((item: any, i: number) => (
+                            {(cityData && cityData.length > 0 ? cityData : []).map((item: any, i: number) => (
                                 <div key={i} className="flex justify-between px-4 py-2 text-xs border-b border-gray-800/30 hover:bg-white/5">
                                     <span className="text-gray-300 w-2/3 truncate">{item.name}</span>
                                     {/* Bar visual for value */}
                                     <div className="w-1/3 flex items-center justify-end gap-2">
                                         <span className="text-white font-mono">{item.value}</span>
                                         <div className="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-orange-500" style={{ width: `${(item.value / (cityData?.[0]?.value || 942)) * 100}%` }}></div>
+                                            <div className="h-full bg-orange-500" style={{ width: `${(item.value / (cityData?.[0]?.value || 1)) * 100}%` }}></div>
                                         </div>
                                     </div>
                                 </div>
                             ))}
+                            {(!cityData || cityData.length === 0) && (
+                                <div className="p-4 text-center text-gray-500 text-xs mt-4">
+                                    Nenhum dado de localização encontrado para este período.
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>
