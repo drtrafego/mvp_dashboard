@@ -65,6 +65,7 @@ export const campaignMetrics = pgTable("campaign_metrics", {
     campaignName: text("campaign_name"),
     adSetId: text("ad_set_id"),
     adId: text("ad_id"),
+    adName: text("ad_name"), // Added missing column
 
     // Universal Metrics (All Platforms)
     impressions: integer("impressions").default(0),

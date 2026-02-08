@@ -221,10 +221,7 @@ const TrafficFunnel = ({
             <div className="absolute top-6 left-0 right-0 z-20 flex justify-center pointer-events-none">
                 <h3 className="text-lg font-semibold text-gray-200 tracking-tight">Funil de Tráfego</h3>
             </div>
-            {/* Refresh Icon Mock */}
-            <div className="absolute top-16 left-[28%] z-20 pointer-events-none opacity-10">
-                <RefreshCw size={60} className="text-white animate-spin-slow" />
-            </div>
+            {/* Refresh Icon Mock Removed */}
 
             {/* Funnel Area */}
             <div className="flex flex-1 pt-14 pb-2 items-center">
@@ -411,7 +408,31 @@ const MainChart = ({ data }: { data: DailyMetric[] }) => {
 
 // --- Main Layout ---
 
+import { syncMetaAds } from "@/server/actions/sync";
+import { useState } from "react";
+
+// ... (existing imports)
+
 export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, dateRangeLabel }: DashboardProps) {
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSync = async () => {
+        setIsSyncing(true);
+        try {
+            const result = await syncMetaAds();
+            if (result.success) {
+                alert(`Sucesso: ${result.message || "Sincronização concluída"}`);
+                window.location.reload();
+            } else {
+                alert(`Erro: ${result.error}`);
+            }
+        } catch (error) {
+            alert("Erro na chamada de sincronização.");
+            console.error(error);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     // Safety check for empty daily charts
     const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], spend: 0, impressions: 0, clicks: 0, conversions: 0, value: 0, roas: 0 }];
@@ -434,10 +455,21 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                     </div>
                 </div>
 
-                <div className="flex items-center bg-[#0f111a] rounded-lg border border-gray-800 p-1">
-                    <button className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded shadow-lg shadow-blue-500/20">Visão Geral</button>
-                    <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Detalhamento</button>
-                    <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Mobile</button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                        {isSyncing ? "Sincronizando..." : "Sincronizar Agora"}
+                    </button>
+
+                    <div className="flex items-center bg-[#0f111a] rounded-lg border border-gray-800 p-1">
+                        <button className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded shadow-lg shadow-blue-500/20">Visão Geral</button>
+                        <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Detalhamento</button>
+                        <button className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Mobile</button>
+                    </div>
                 </div>
             </header>
 
@@ -491,10 +523,10 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
             </div >
 
             {/* Charts Section */}
-            < div className="grid grid-cols-1 lg:grid-cols-3 gap-6" >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                {/* Funnel (Left - 1 col) */}
-                < div className="lg:col-span-1" >
+                {/* Funnel (Left - 50%) */}
+                <div className="lg:col-span-1">
                     <TrafficFunnel
                         impressions={totals.impressions}
                         clicks={totals.clicks}
@@ -502,12 +534,12 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                         cpm={totals.cpm}
                         frequency={totals.frequency}
                     />
-                </div >
+                </div>
 
-                {/* Main Line Chart (Right - 2 cols) */}
-                < div className="lg:col-span-2" >
+                {/* Main Line Chart (Right - 50%) */}
+                <div className="lg:col-span-1">
                     <MainChart data={safeDaily} />
-                </div >
+                </div>
             </div >
 
             {/* Bottom Section: Table & Pie */}

@@ -49,8 +49,6 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         conversionValue: campaignMetrics.conversionValue,
         date: campaignMetrics.date,
         cpm: campaignMetrics.cpm,
-        date: campaignMetrics.date,
-        cpm: campaignMetrics.cpm,
         frequency: campaignMetrics.frequency,
         adName: campaignMetrics.adName,
     })
