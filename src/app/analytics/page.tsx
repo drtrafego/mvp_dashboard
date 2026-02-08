@@ -2,7 +2,13 @@ import { getAnalyticsMetrics } from "@/server/actions/analytics";
 import { getAdAccountSettings } from "@/server/actions/ad-account-settings";
 import AnalyticsDashboard from "./dashboard-analytics";
 
-export default async function AnalyticsPage() {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
+
+export default async function AnalyticsPage(props: { searchParams: SearchParams }) {
+    const searchParams = await props.searchParams
+    const from = typeof searchParams.from === 'string' ? searchParams.from : undefined
+    const to = typeof searchParams.to === 'string' ? searchParams.to : undefined
+
     const settings = await getAdAccountSettings();
     const isConnected = Boolean(settings?.ga4PropertyId);
 
@@ -13,11 +19,15 @@ export default async function AnalyticsPage() {
     let metrics = null;
     if (isConnected) {
         try {
-            metrics = await getAnalyticsMetrics(90);
+            metrics = await getAnalyticsMetrics(from, to);
         } catch (e) {
             console.error("Failed to fetch analytics", e);
         }
     }
+
+    const dateLabel = from && to
+        ? `${new Date(from).toLocaleDateString('pt-BR')} - ${new Date(to).toLocaleDateString('pt-BR')}`
+        : "Últimos 90 dias";
 
     return (
         <div className="min-h-screen bg-[#050505]">
@@ -45,7 +55,7 @@ export default async function AnalyticsPage() {
                         weekData={metrics.weekData}
                         cityData={metrics.cityData}
                         regionData={metrics.regionData}
-                        dateRangeLabel="Últimos 90 dias"
+                        dateRangeLabel={dateLabel}
                     />
                 ) : (
                     <div className="p-8 text-white">Carregando dados...</div>
