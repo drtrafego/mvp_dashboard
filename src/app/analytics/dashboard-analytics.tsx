@@ -51,7 +51,6 @@ type AnalyticsDashboardProps = {
     osData: DimensionData[];
     deviceData: DimensionData[];
     weekData: { day: string; value: number }[];
-    dateRangeLabel?: string;
     cityData?: DimensionData[];
     regionData?: DimensionData[];
 };
@@ -160,7 +159,6 @@ export default function AnalyticsDashboard({
     osData,
     deviceData,
     weekData,
-    dateRangeLabel,
     cityData,
     regionData
 }: AnalyticsDashboardProps) {

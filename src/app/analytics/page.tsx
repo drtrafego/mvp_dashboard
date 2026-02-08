@@ -55,7 +55,6 @@ export default async function AnalyticsPage(props: { searchParams: SearchParams 
                         weekData={metrics.weekData}
                         cityData={metrics.cityData}
                         regionData={metrics.regionData}
-                        dateRangeLabel={dateLabel}
                     />
                 ) : (
                     <div className="p-8 text-white">Carregando dados...</div>
