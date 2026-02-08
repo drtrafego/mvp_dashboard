@@ -223,9 +223,8 @@ const TrafficFunnel = ({
     // Derived Metrics
     // Real Data or Derivatives
     // We need to update TrafficFunnel signature to accept landingPageViews
-    const safePageViews = landingPageViews || Math.round(clicks * 0.8); // Fallback if 0th.round(clicks * 0.8); // Fallback if 0
-    // Mock "Checkouts" if not passed
-    const checkouts = Math.round(safePageViews * 0.15);
+    const safePageViews = landingPageViews || 0; // User wants correct data, if 0 show 0 to debug why
+    // Mock "Checkouts" removed as requested flow is Impressions -> Clicks -> PV -> Leads
 
     // Rates for side display
     const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
@@ -253,32 +252,32 @@ const TrafficFunnel = ({
                     <div className="w-[100%] h-4 bg-[#0284c7] rounded-[50%] absolute -top-2 z-5 border border-white/10"></div>
 
                     <FunnelLayer
+                        label="Visualizações"
+                        value={formatUncertain(impressions)}
+                        widthPercent={100}
+                        color="#38bdf8" // Sky 400
+                        zIndex={5}
+                    />
+                    <FunnelLayer
                         label="Cliques"
                         value={formatUncertain(clicks)}
-                        widthPercent={100}
+                        widthPercent={85}
                         color="#0ea5e9" // Sky 500
                         zIndex={4}
                     />
                     <FunnelLayer
-                        label="Page Views"
+                        label="Pg View"
                         value={formatUncertain(safePageViews)}
-                        widthPercent={82}
+                        widthPercent={70}
                         color="#0284c7" // Sky 600
                         zIndex={3}
                     />
                     <FunnelLayer
-                        label="Checkouts"
-                        value={formatUncertain(checkouts)}
-                        widthPercent={64}
+                        label={label}
+                        value={formatUncertain(conversions)}
+                        widthPercent={55}
                         color="#0369a1" // Sky 700
                         zIndex={2}
-                    />
-                    <FunnelLayer
-                        label="Compras"
-                        value={formatUncertain(conversions)}
-                        widthPercent={46}
-                        color="#0c4a6e" // Sky 900
-                        zIndex={1}
                         isBottom={true}
                     />
                 </div>
@@ -287,8 +286,8 @@ const TrafficFunnel = ({
                 {/* Metrics List (Right Side) */}
                 <div className="absolute right-4 top-16 bottom-20 flex flex-col justify-between py-4 text-right z-20">
                     <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Cliques</div>
-                        <div className="text-xl font-bold text-white">{ctr.toFixed(2)}%</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">CPM Médio</div>
+                        <div className="text-xl font-bold text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cpm || 0)}</div>
                     </div>
                     <div className="flex flex-col items-end">
                         <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Cliques</div>
@@ -685,10 +684,12 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                                     {activeTab === 'campaigns' && isCapture && (
                                         <th className="px-4 py-3 font-medium bg-[#0f111a]">Melhor Anúncio</th>
                                     )}
-                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">Investimento</th>
-                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'Leads' : 'Compras'}</th>
-                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'CPL' : 'CPA'}</th>
-                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'CTR' : 'ROAS'}</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Impressões</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Cliques</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Pg Views</th> {/* New Header */}
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'Leads' : 'Compras'}</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'CPL' : 'CPA'}</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'CTR' : 'ROAS'}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800/50 text-sm">
@@ -727,6 +728,19 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                                             )}
                                             <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.spend, minSpend, maxSpend)}>
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.spend)}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.impressions, 0, 0)}>
+                                                {new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(item.impressions)}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.clicks, 0, 0)}>
+                                                {new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(item.clicks)}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.ctr, 0, 0)}>
+                                                {item.ctr.toFixed(2)}%
+                                            </td>
+                                            {/* Page Views Column - New */}
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle((item as any).landingPageViews || 0, 0, 0)}>
+                                                {new Intl.NumberFormat('pt-BR', { notation: "compact" }).format((item as any).landingPageViews || 0)}
                                             </td>
                                             <td className="px-4 py-3 text-right text-gray-300 font-bold" style={getHeatmapStyle(resultVal, minResults, maxResults)}>
                                                 {resultVal}
