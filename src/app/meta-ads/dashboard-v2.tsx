@@ -49,6 +49,7 @@ type DashboardProps = {
     campaigns: CampaignMetric[];
     ads: CampaignMetric[]; // Reusing type as structure is identical
     dateRangeLabel: string;
+    mode?: 'ecommerce' | 'capture';
 };
 
 // --- Components ---

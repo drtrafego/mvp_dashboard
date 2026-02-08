@@ -23,7 +23,7 @@ export default async function DebugMetaPage() {
     let actionResult = null;
     let actionError = null;
     try {
-        actionResult = await getMetaAdsMetrics(90); // Updated to 90 to match new default
+        actionResult = await getMetaAdsMetrics(undefined, undefined); // Updated to match new signature
     } catch (e: any) {
         actionError = e.message;
     }

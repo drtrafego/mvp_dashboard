@@ -148,9 +148,66 @@ export default function Sidebar({ collapsed, setCollapsed, isMobileOpen, setIsMo
                 <nav className="flex-1 py-4 overflow-y-auto">
                     <ul className="space-y-1 px-2">
                         {navItems.map((item) => {
-                            const isActive = pathname === item.href;
+                            const isActive = pathname === item.href || (item.name === "Meta Ads" && pathname.startsWith("/meta-ads"));
+
                             // Filter admin items
                             if ((item as any).adminOnly && !isSuperAdmin) return null;
+
+                            // Special case for Meta Ads Submenu
+                            if (item.name === "Meta Ads") {
+                                return (
+                                    <li key={item.href} className="space-y-1">
+                                        <div
+                                            className={cn(
+                                                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all cursor-pointer group",
+                                                isActive
+                                                    ? "bg-blue-600/10 text-blue-500"
+                                                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                                            )}
+                                            onClick={() => !collapsed && setCollapsed(false)} // Expand if collapsed
+                                        >
+                                            <span className={item.color && !isActive ? item.color : "text-blue-500"}>
+                                                {item.icon}
+                                            </span>
+                                            {!collapsed && (
+                                                <div className="flex-1 flex items-center justify-between">
+                                                    <span className="font-medium">Meta Ads</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Submenu */}
+                                        {!collapsed && (
+                                            <div className="pl-10 space-y-1">
+                                                <Link
+                                                    href="/meta-ads/ecommerce"
+                                                    onClick={() => setIsMobileOpen(false)}
+                                                    className={cn(
+                                                        "block px-3 py-2 text-sm rounded-lg transition-colors",
+                                                        pathname === "/meta-ads/ecommerce" || pathname === "/meta-ads"
+                                                            ? "bg-blue-600 text-white font-medium"
+                                                            : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                    )}
+                                                >
+                                                    E-commerce
+                                                </Link>
+                                                <Link
+                                                    href="/meta-ads/captacao"
+                                                    onClick={() => setIsMobileOpen(false)}
+                                                    className={cn(
+                                                        "block px-3 py-2 text-sm rounded-lg transition-colors",
+                                                        pathname === "/meta-ads/captacao"
+                                                            ? "bg-blue-600 text-white font-medium"
+                                                            : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                    )}
+                                                >
+                                                    Captação
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </li>
+                                );
+                            }
 
                             return (
                                 <li key={item.href}>
