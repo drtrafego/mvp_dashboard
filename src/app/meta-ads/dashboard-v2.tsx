@@ -420,24 +420,29 @@ import { useState } from "react";
 // ... (existing imports)
 
 // --- Heatmap Helper ---
-const getHeatmapColor = (value: number, min: number, max: number, inverse = false) => {
-    if (min === max) return "transparent";
+// Simplified to return consistent, readable background styles
+const getHeatmapStyle = (value: number, min: number, max: number, inverse = false) => {
+    if (min === max || isNaN(value)) return {}; // No style if no range
+
     let ratio = (value - min) / (max - min);
     if (inverse) ratio = 1 - ratio; // For CPA/CPL (lower is better)
 
-    // Blue scale for positive metrics, Red scale for negative/cost
-    const intensity = Math.round(ratio * 0.4 * 255); // Max opacity 40%
-    // const color = inverse ? `rgba(239, 68, 68, ${ratio * 0.3})` : `rgba(59, 130, 246, ${ratio * 0.3})`;
-    // Using a more vibrant green for good, red for bad approach or keeping it blue/monochromatic?
-    // User asked for "heatmap", usually implies scaling color.
-    // Let's use Blue for general volume, Green for ROAS/Results, Red for Cost.
+    // Using solid, low-opacity backgrounds that ensure text remains readable
+    // We stick to a blueish tint for consistency with the dark theme
+    // Low: Transparent/Very subtle
+    // Medium: Visible Blue
+    // High: Stronger Blue
 
-    return `rgba(59, 130, 246, ${ratio * 0.25})`; // Uniform Blue Heatmap for now to be clean
+    // We return a style object directly
+    if (ratio < 0.2) return {};
+    if (ratio < 0.5) return { backgroundColor: 'rgba(59, 130, 246, 0.15)', color: 'white' }; // Blue 500 at 15%
+    if (ratio < 0.8) return { backgroundColor: 'rgba(59, 130, 246, 0.30)', color: 'white' }; // Blue 500 at 30%
+    return { backgroundColor: 'rgba(59, 130, 246, 0.50)', color: 'white', fontWeight: 'bold' }; // Blue 500 at 50%
 };
 
 export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, dateRangeLabel, mode = 'ecommerce' }: DashboardProps) {
     const [isSyncing, setIsSyncing] = useState(false);
-    const [activeTab, setActiveTab] = useState<'campaigns' | 'ads' | 'adsets'>('campaigns');
+    const [activeTab, setActiveTab] = useState<'campaigns' | 'ads'>('campaigns'); // Cleaned up type
 
     // ... (sync logic)
 
@@ -465,18 +470,28 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
     const tableData = activeTab === 'ads' ? ads : campaigns;
     const isCapture = mode === 'capture';
 
-    // Min/Max for Heatmap
-    const maxSpend = Math.max(...tableData.map(d => d.spend));
-    const minSpend = Math.min(...tableData.map(d => d.spend));
+    // Helper to safely get Number values
+    const safeMap = (arr: any[], key: string) => arr.map(d => Number(d[key] || 0));
+    const safeMapDeep = (arr: any[], key: string) => arr.map(d => Number((d as any)[key] || 0));
 
-    const maxResults = Math.max(...tableData.map(d => isCapture ? (d as any).leads || 0 : d.conversions));
-    const minResults = Math.min(...tableData.map(d => isCapture ? (d as any).leads || 0 : d.conversions));
+    // Min/Max for Heatmap - Calculated safely
+    const spendVals = safeMap(tableData, 'spend');
+    const maxSpend = Math.max(...spendVals, 0);
+    const minSpend = Math.min(...spendVals, 0);
 
-    const maxCost = Math.max(...tableData.map(d => isCapture ? (d as any).cpl || 0 : d.cpa));
-    const minCost = Math.min(...tableData.map(d => isCapture ? (d as any).cpl || 0 : d.cpa));
+    const resultApi = isCapture ? 'leads' : 'conversions';
+    const resultVals = safeMapDeep(tableData, resultApi);
+    const maxResults = Math.max(...resultVals, 0);
+    const minResults = Math.min(...resultVals, 0);
 
-    const maxRoas = Math.max(...tableData.map(d => d.roas));
-    const minRoas = Math.min(...tableData.map(d => d.roas));
+    const costApi = isCapture ? 'cpl' : 'cpa';
+    const costVals = safeMapDeep(tableData, costApi);
+    const maxCost = Math.max(...costVals, 0);
+    const minCost = Math.min(...costVals, 0);
+
+    const roasVals = isCapture ? safeMap(tableData, 'ctr') : safeMap(tableData, 'roas');
+    const maxRoas = Math.max(...roasVals, 0);
+    const minRoas = Math.min(...roasVals, 0);
 
 
     return (
@@ -506,15 +521,15 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                         <HelpCircle size={16} className="text-gray-600" />
                     </div>
                     <div className="overflow-x-auto max-h-[500px]">
-                        <table className="w-full text-left relative">
-                            <thead className="bg-[#0f111a] sticky top-0 z-10">
-                                <tr className="text-gray-500 text-[11px] uppercase tracking-wider">
-                                    <th className="px-4 py-3 font-medium w-6">#</th>
-                                    <th className="px-4 py-3 font-medium">Nome</th>
-                                    <th className="px-4 py-3 font-medium text-right">Investimento</th>
-                                    <th className="px-4 py-3 font-medium text-right">{isCapture ? 'Leads' : 'Compras'}</th>
-                                    <th className="px-4 py-3 font-medium text-right">{isCapture ? 'CPL' : 'CPA'}</th>
-                                    <th className="px-4 py-3 font-medium text-right">{isCapture ? 'CTR' : 'ROAS'}</th>
+                        <table className="w-full text-left relative border-collapse">
+                            <thead className="bg-[#0f111a] sticky top-0 z-10 shadow-md">
+                                <tr className="text-gray-400 text-[11px] uppercase tracking-wider">
+                                    <th className="px-4 py-3 font-medium w-6 bg-[#0f111a]">#</th>
+                                    <th className="px-4 py-3 font-medium bg-[#0f111a]">Nome</th>
+                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">Investimento</th>
+                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'Leads' : 'Compras'}</th>
+                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'CPL' : 'CPA'}</th>
+                                    <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'CTR' : 'ROAS'}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800/50 text-sm">
@@ -524,23 +539,25 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                                     const finalVal = isCapture ? item.ctr : item.roas;
 
                                     return (
-                                        <tr key={i} className="hover:bg-blue-500/5 transition-colors cursor-pointer group">
+                                        <tr key={i} className="hover:bg-blue-500/5 transition-colors cursor-pointer group border-b border-gray-800/30">
                                             <td className="px-4 py-3 text-gray-500 text-xs">{i + 1}.</td>
-                                            <td className="px-4 py-3 font-medium text-gray-300 max-w-[200px] truncate group-hover:text-blue-400 transition-colors" title={isCapture && activeTab === 'ads' ? (item as any).adName : item.name}>
+                                            <td className="px-4 py-3 font-medium text-white max-w-[200px] truncate group-hover:text-blue-400 transition-colors" title={isCapture && activeTab === 'ads' ? (item as any).adName : item.name}>
                                                 {activeTab === 'ads' && (item as any).adName ? (item as any).adName : item.name}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono text-xs" style={{ backgroundColor: getHeatmapColor(item.spend, minSpend, maxSpend) }}>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.spend, minSpend, maxSpend)}>
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.spend)}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-white font-bold" style={{ backgroundColor: getHeatmapColor(resultVal, minResults, maxResults) }}>
+                                            <td className="px-4 py-3 text-right text-gray-300 font-bold" style={getHeatmapStyle(resultVal, minResults, maxResults)}>
                                                 {resultVal}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-gray-400 text-xs" style={{ backgroundColor: getHeatmapColor(costVal, minCost, maxCost, true) }}>
+                                            <td className="px-4 py-3 text-right text-gray-300 text-xs" style={getHeatmapStyle(costVal, minCost, maxCost, true)}>
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(costVal)}
                                             </td>
-                                            <td className="px-4 py-3 text-right" style={{ backgroundColor: getHeatmapColor(finalVal, isCapture ? 0 : minRoas, isCapture ? 5 : maxRoas) }}>
+                                            <td className="px-4 py-3 text-right text-gray-300" style={getHeatmapStyle(finalVal, isCapture ? 0 : minRoas, isCapture ? 5 : maxRoas)}>
                                                 {isCapture ? `${finalVal.toFixed(2)}%` : (
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${item.roas > 2 ? 'text-green-400' : item.roas > 1 ? 'text-yellow-500' : 'text-red-500'}`}>
+                                                    // For ROAS Color, we just use the heatmap style if it's high enough, effectively overriding the text color
+                                                    // Or stick to the numeric coloring? Let's use the heatmap bg but keep the logic simple.
+                                                    <span className={item.roas > 2 ? 'text-green-400' : item.roas > 1 ? 'text-yellow-400' : 'text-red-400'}>
                                                         {item.roas.toFixed(2)}
                                                     </span>
                                                 )}
