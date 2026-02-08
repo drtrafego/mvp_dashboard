@@ -22,6 +22,8 @@ export type AnalyticsMetrics = {
     osData: any[];
     deviceData: any[];
     weekData: any[];
+    cityData: any[];
+    regionData: any[];
 };
 
 export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> {
@@ -79,9 +81,10 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
     // Maps for aggregation
     const osMap = new Map<string, number>();
     const deviceMap = new Map<string, number>();
-    const cityMap = new Map<string, number>(); // For future use if we want a map chart
+    const cityMap = new Map<string, number>();
+    const regionMap = new Map<string, number>();
     const pageMap = new Map<string, number>();
-    const sourceMap = new Map<string, any>(); // Redoing source map from dimensions if available
+    const sourceMap = new Map<string, any>();
 
     // Check if we have dimension data
     const hasDimensions = dimData.length > 0;
@@ -96,6 +99,10 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
                 deviceMap.set(row.dimensionValue, (deviceMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'PAGE_PATH') {
                 pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + val);
+            } else if (row.dimensionType === 'CITY') {
+                cityMap.set(row.dimensionValue, (cityMap.get(row.dimensionValue) || 0) + val);
+            } else if (row.dimensionType === 'REGION') {
+                regionMap.set(row.dimensionValue, (regionMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'SOURCE') {
                 // Use sessionSource dimension for more accurate source data than campaigns
                 if (!sourceMap.has(row.dimensionValue)) {
@@ -151,6 +158,24 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
             name: entry[0],
             value: entry[1],
             color: deviceColors[i % deviceColors.length]
+        }));
+
+    // Format City Data
+    const cityData = Array.from(cityMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(entry => ({
+            name: entry[0],
+            value: entry[1]
+        }));
+
+    // Format Region Data
+    const regionData = Array.from(regionMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(entry => ({
+            name: entry[0],
+            value: entry[1]
         }));
 
     // Format Pages
@@ -217,6 +242,8 @@ export async function getAnalyticsMetrics(days = 90): Promise<AnalyticsMetrics> 
         osData,
         deviceData,
         weekData,
-        pages
+        pages,
+        cityData,
+        regionData
     };
 }
