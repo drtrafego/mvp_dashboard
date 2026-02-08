@@ -54,7 +54,6 @@ export default async function AnalyticsPage(props: { searchParams: SearchParams 
                         deviceData={metrics.deviceData}
                         weekData={metrics.weekData}
                         cityData={metrics.cityData}
-                        regionData={metrics.regionData}
                     />
                 ) : (
                     <div className="p-8 text-white">Carregando dados...</div>
