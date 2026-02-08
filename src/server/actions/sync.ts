@@ -92,6 +92,7 @@ export async function syncMetaAds(days = 30) {
             clicks: Number(item.clicks) || 0,
             spend: String(item.spend || 0),
             conversions: Number(item.conversions) || 0,
+            leads: Number(item.leads) || 0,
             conversionValue: String(item.conversionValue || 0),
             // Calculated / Meta Specific
             ctr: String(item.ctr || 0),

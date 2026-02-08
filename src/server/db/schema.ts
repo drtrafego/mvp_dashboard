@@ -72,6 +72,7 @@ export const campaignMetrics = pgTable("campaign_metrics", {
     clicks: integer("clicks").default(0),
     spend: numeric("spend", { precision: 12, scale: 2 }).default("0"), // Unified: Meta "spend" + Google "cost"
     conversions: integer("conversions").default(0),
+    leads: integer("leads").default(0), // Added leads column
     conversionValue: numeric("conversion_value", { precision: 12, scale: 2 }),
 
     // Calculated Performance Metrics

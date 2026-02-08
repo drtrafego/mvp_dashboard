@@ -19,6 +19,7 @@ export type DashboardMetrics = {
         value: number;
         cpm: number;
         frequency: number;
+        leads: number;
     };
     campaigns: any[];
     ads: any[];
@@ -46,6 +47,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         impressions: campaignMetrics.impressions,
         clicks: campaignMetrics.clicks,
         conversions: campaignMetrics.conversions,
+        leads: campaignMetrics.leads, // Added
         conversionValue: campaignMetrics.conversionValue,
         date: campaignMetrics.date,
         cpm: campaignMetrics.cpm,
@@ -60,14 +62,12 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
             gte(campaignMetrics.date, startDate)
         ));
 
-    // Aggregation (in memory because numeric fields handle easier in JS for small datasets, 
-    // but for scale we should use SQL SUM. For MVP/30days, memory is fine/fast.)
-
     // Aggregation
     let totalSpend = 0;
     let totalImpressions = 0;
     let totalClicks = 0;
     let totalConversions = 0;
+    let totalLeads = 0; // Added
     let totalConversionValue = 0;
 
     // Daily Map for Charts
@@ -83,6 +83,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         const imps = m.impressions || 0;
         const clicks = m.clicks || 0;
         const conv = m.conversions || 0;
+        const leads = m.leads || 0; // Added
         const val = Number(m.conversionValue) || 0;
 
         // Totals
@@ -90,12 +91,8 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         totalImpressions += imps;
         totalClicks += clicks;
         totalConversions += conv;
+        totalLeads += leads;
         totalConversionValue += val;
-        // CPM and Frequency are rates/averages, so we don't sum them directly for totals. 
-        // We will calculate CPM from Total Spend / Total Impressions.
-        // Frequency is harder to aggregate without Reach. We will average it or take the max? 
-        // Let's rely on the provided frequency field for now, but strictly it should be Spend/Impressions for CPM.
-        // For Frequency, we'll accumulate it to average it later.
 
         // Daily Grouping
         if (!dailyMap.has(dateStr)) {
@@ -105,6 +102,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
                 impressions: 0,
                 clicks: 0,
                 conversions: 0,
+                leads: 0, // Added
                 value: 0,
                 roas: 0
             });
@@ -114,6 +112,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         d.impressions += imps;
         d.clicks += clicks;
         d.conversions += conv;
+        d.leads += leads;
         d.value += val;
         d.roas = d.spend > 0 ? d.value / d.spend : 0;
 
@@ -126,6 +125,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
                 impressions: 0,
                 clicks: 0,
                 conversions: 0,
+                leads: 0,
                 value: 0
             });
         }
@@ -134,6 +134,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         c.impressions += imps;
         c.clicks += clicks;
         c.conversions += conv;
+        c.leads += leads;
         c.value += val;
 
         // Ad Grouping
@@ -145,6 +146,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
                 impressions: 0,
                 clicks: 0,
                 conversions: 0,
+                leads: 0,
                 value: 0
             });
         }
@@ -153,6 +155,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         a.impressions += imps;
         a.clicks += clicks;
         a.conversions += conv;
+        a.leads += leads;
         a.value += val;
     }
 
@@ -167,6 +170,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0,
         cpc: c.clicks > 0 ? c.spend / c.clicks : 0,
         cpa: c.conversions > 0 ? c.spend / c.conversions : 0,
+        cpl: c.leads > 0 ? c.spend / c.leads : 0, // Cost per Lead
         roas: c.spend > 0 ? c.value / c.spend : 0,
     })).sort((a, b) => b.spend - a.spend);
 
@@ -183,6 +187,7 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
             impressions: totalImpressions,
             clicks: totalClicks,
             conversions: totalConversions,
+            leads: totalLeads, // Added
             value: totalConversionValue,
             ctr: avgCTR,
             cpc: avgCPC,

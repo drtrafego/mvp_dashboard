@@ -96,6 +96,7 @@ export async function getMetaAdsData(organizationId: string, days = 30) {
             ctr: item.ctr,
             cpc: item.cpc,
             conversions: item.actions?.find((a: any) => a.action_type === 'purchase')?.value || 0,
+            leads: item.actions?.find((a: any) => ['lead', 'contact', 'submit_application', 'schedule'].includes(a.action_type))?.value || 0,
             conversionValue: item.action_values?.find((a: any) => a.action_type === 'purchase_value')?.value || 0,
         }));
 
