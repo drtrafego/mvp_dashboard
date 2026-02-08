@@ -680,7 +680,7 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                                 {tableData.map((item, i) => {
                                     // Use type-safe properties now that CampaignMetric has them
                                     const resultVal = isCapture ? item.leads || 0 : item.conversions;
-                                    const costVal = isCapture ? (item.leads > 0 ? item.spend / item.leads : 0) : item.cpa; // Calculate CPL dynamically if needed
+                                    const costVal = isCapture ? ((item.leads || 0) > 0 ? item.spend / (item.leads || 1) : 0) : item.cpa; // Calculate CPL dynamically if needed
                                     const finalVal = isCapture ? item.ctr : item.roas; // Not displaying CTR again at end, maybe ROAS or empty for Capture? 
                                     // Actually user screenshot shows a last column.
                                     // Let's stick to the Body Order:
