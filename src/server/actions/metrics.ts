@@ -20,6 +20,11 @@ export type DashboardMetrics = {
         cpm: number;
         frequency: number;
         leads: number;
+        leads: number;
+        videoViews3s: number;
+        videoThruplays: number;
+        linkClicks: number;
+        landingPageViews: number;
     };
     campaigns: any[];
     ads: any[];
@@ -55,6 +60,10 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         cpm: campaignMetrics.cpm,
         frequency: campaignMetrics.frequency,
         adName: campaignMetrics.adName, // Explicitly selecting adName
+        videoViews3s: campaignMetrics.videoViews3s,
+        videoThruplays: campaignMetrics.videoThruplays,
+        linkClicks: campaignMetrics.linkClicks,
+        landingPageViews: campaignMetrics.landingPageViews,
     })
         .from(campaignMetrics)
         .innerJoin(integrations, eq(campaignMetrics.integrationId, integrations.id))
@@ -71,7 +80,12 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
     let totalClicks = 0;
     let totalConversions = 0;
     let totalLeads = 0; // Added
+    let totalLeads = 0; // Added
     let totalConversionValue = 0;
+    let totalVideoViews3s = 0;
+    let totalVideoThruplays = 0;
+    let totalLinkClicks = 0;
+    let totalLandingPageViews = 0;
 
     // Daily Map for Charts
     const dailyMap = new Map<string, any>();
@@ -88,6 +102,10 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         const conv = m.conversions || 0;
         const leads = m.leads || 0; // Added
         const val = Number(m.conversionValue) || 0;
+        const v3s = m.videoViews3s || 0;
+        const vThru = m.videoThruplays || 0;
+        const lClicks = m.linkClicks || 0;
+        const lpViews = m.landingPageViews || 0;
 
         // Totals
         totalSpend += spend;
@@ -95,7 +113,12 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         totalClicks += clicks;
         totalConversions += conv;
         totalLeads += leads;
+        totalLeads += leads;
         totalConversionValue += val;
+        totalVideoViews3s += v3s;
+        totalVideoThruplays += vThru;
+        totalLinkClicks += lClicks;
+        totalLandingPageViews += lpViews;
 
         // Daily Grouping
         if (!dailyMap.has(dateStr)) {
@@ -106,7 +129,12 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
                 clicks: 0,
                 conversions: 0,
                 leads: 0, // Added
+                leads: 0, // Added
                 value: 0,
+                videoViews3s: 0,
+                videoThruplays: 0,
+                linkClicks: 0,
+                landingPageViews: 0,
                 roas: 0
             });
         }
@@ -116,7 +144,12 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         d.clicks += clicks;
         d.conversions += conv;
         d.leads += leads;
+        d.leads += leads;
         d.value += val;
+        d.videoViews3s += v3s;
+        d.videoThruplays += vThru;
+        d.linkClicks += lClicks;
+        d.landingPageViews += lpViews;
         d.roas = d.spend > 0 ? d.value / d.spend : 0;
 
         // Campaign Grouping
@@ -128,8 +161,13 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
                 impressions: 0,
                 clicks: 0,
                 conversions: 0,
+                conversions: 0,
                 leads: 0,
-                value: 0
+                value: 0,
+                videoViews3s: 0,
+                videoThruplays: 0,
+                linkClicks: 0,
+                landingPageViews: 0,
             });
         }
         const c = campaignMap.get(name);
@@ -139,18 +177,29 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         c.conversions += conv;
         c.leads += leads;
         c.value += val;
+        c.videoViews3s += v3s;
+        c.videoThruplays += vThru;
+        c.linkClicks += lClicks;
+        c.landingPageViews += lpViews;
 
         // Ad Grouping
         const adName = m.adName || "Unknown Ad";
         if (!adMap.has(adName)) {
             adMap.set(adName, {
                 name: adName,
+                adName: adName, // Explicitly set adName
+                campaignName: name, // Link to Campaign
                 spend: 0,
                 impressions: 0,
                 clicks: 0,
                 conversions: 0,
+                conversions: 0,
                 leads: 0,
-                value: 0
+                value: 0,
+                videoViews3s: 0,
+                videoThruplays: 0,
+                linkClicks: 0,
+                landingPageViews: 0,
             });
         }
         const a = adMap.get(adName);
@@ -160,6 +209,10 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         a.conversions += conv;
         a.leads += leads;
         a.value += val;
+        a.videoViews3s += v3s;
+        a.videoThruplays += vThru;
+        a.linkClicks += lClicks;
+        a.landingPageViews += lpViews;
     }
 
     // Calculations
@@ -175,11 +228,28 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         cpa: c.conversions > 0 ? c.spend / c.conversions : 0,
         cpl: c.leads > 0 ? c.spend / c.leads : 0, // Cost per Lead
         roas: c.spend > 0 ? c.value / c.spend : 0,
+        hookRate: c.impressions > 0 ? (c.videoViews3s / c.impressions) * 100 : 0,
+        holdRate: c.videoViews3s > 0 ? (c.videoThruplays / c.videoViews3s) * 100 : 0,
+        connectRate: c.linkClicks > 0 ? (c.landingPageViews / c.linkClicks) * 100 : 0,
     })).sort((a, b) => b.spend - a.spend);
 
     const ads = Array.from(adMap.values()).map(a => ({
-        ...a,
+        name: a.name,
+        adName: a.adName,
+        campaignName: a.campaignName,
+        spend: a.spend,
+        impressions: a.impressions,
+        clicks: a.clicks,
+        conversions: a.conversions,
+        leads: a.leads,
+        value: a.value,
+        ctr: a.impressions > 0 ? (a.clicks / a.impressions) * 100 : 0,
+        cpc: a.clicks > 0 ? a.spend / a.clicks : 0,
+        cpa: a.conversions > 0 ? a.spend / a.conversions : 0,
         roas: a.spend > 0 ? a.value / a.spend : 0,
+        hookRate: a.impressions > 0 ? (a.videoViews3s / a.impressions) * 100 : 0,
+        holdRate: a.videoViews3s > 0 ? (a.videoThruplays / a.videoViews3s) * 100 : 0,
+        connectRate: a.linkClicks > 0 ? (a.landingPageViews / a.linkClicks) * 100 : 0,
     })).sort((a, b) => b.conversions - a.conversions); // Sort by conversions for "Best Ads"
 
     const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
@@ -197,7 +267,12 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
             cpa: avgCPA,
             roas: avgROAS,
             cpm: totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0,
-            frequency: 1.2, // Placeholder average, as we don't have weighted avg logic yet for multiple campaigns
+            cpm: totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0,
+            frequency: 1.2, // Placeholder average
+            videoViews3s: totalVideoViews3s,
+            videoThruplays: totalVideoThruplays,
+            linkClicks: totalLinkClicks,
+            landingPageViews: totalLandingPageViews,
         },
         campaigns,
         ads,

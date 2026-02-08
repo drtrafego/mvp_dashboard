@@ -87,6 +87,9 @@ export const campaignMetrics = pgTable("campaign_metrics", {
     hookRate: numeric("hook_rate", { precision: 5, scale: 2 }), // 3s video views / impressions
     holdRate: numeric("hold_rate", { precision: 5, scale: 2 }), // 75%+ video views / 3s views
     videoViews3s: integer("video_views_3s"), // ThruPlay actions (3 seconds)
+    videoThruplays: integer("video_thruplays"), // 15s or complete
+    landingPageViews: integer("landing_page_views"), // Landing Page Views
+    linkClicks: integer("link_clicks"), // Link Clicks
     videoViews75: integer("video_views_75"), // 75% video completion
     videoCompletes: integer("video_completes"), // 100% completion
     frequency: numeric("frequency", { precision: 5, scale: 2 }), // Avg impressions per user

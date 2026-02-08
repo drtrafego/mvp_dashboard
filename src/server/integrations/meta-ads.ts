@@ -49,6 +49,10 @@ export async function getMetaAdsData(organizationId: string, days = 30) {
         'ctr',
         'actions',
         'action_values',
+        'video_play_actions',
+        'video_thruplay_watched_actions',
+        'video_p75_watched_actions',
+        'video_p100_watched_actions',
     ];
 
     // Calculate date range based on days parameter
@@ -98,6 +102,16 @@ export async function getMetaAdsData(organizationId: string, days = 30) {
             conversions: item.actions?.find((a: any) => a.action_type === 'purchase')?.value || 0,
             leads: item.actions?.find((a: any) => ['lead', 'contact', 'submit_application', 'schedule'].includes(a.action_type))?.value || 0,
             conversionValue: item.action_values?.find((a: any) => a.action_type === 'purchase_value')?.value || 0,
+
+            // Video Metrics
+            videoViews3s: item.video_play_actions?.find((a: any) => a.action_type === 'video_view')?.value || 0,
+            videoThruplays: item.video_thruplay_watched_actions?.find((a: any) => a.action_type === 'video_view')?.value || 0,
+            videoViews75: item.video_p75_watched_actions?.find((a: any) => a.action_type === 'video_view')?.value || 0,
+            videoCompletes: item.video_p100_watched_actions?.find((a: any) => a.action_type === 'video_view')?.value || 0,
+
+            // Click Metrics
+            linkClicks: item.actions?.find((a: any) => a.action_type === 'link_click')?.value || 0,
+            landingPageViews: item.actions?.find((a: any) => a.action_type === 'landing_page_view')?.value || 0,
         }));
 
         return data;

@@ -97,6 +97,14 @@ export async function syncMetaAds(days = 30) {
             // Calculated / Meta Specific
             ctr: String(item.ctr || 0),
             cpc: String(item.cpc || 0),
+
+            // New Video & Click Metrics
+            videoViews3s: Number(item.videoViews3s) || 0,
+            videoThruplays: Number(item.videoThruplays) || 0,
+            videoViews75: Number(item.videoViews75) || 0,
+            videoCompletes: Number(item.videoCompletes) || 0,
+            linkClicks: Number(item.linkClicks) || 0,
+            landingPageViews: Number(item.landingPageViews) || 0,
         }));
 
         // Batch insert? Drizzle handles it, but let's be safe with chunking if huge

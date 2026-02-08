@@ -1,12 +1,11 @@
 
 "use client";
 
-import { useMemo } from "react";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, Cell, PieChart, Pie
+    PieChart, Pie, Cell // Added Cell if used, or remove if not
 } from "recharts";
-import { ArrowUp, ArrowDown, Filter, Download, Grip, HelpCircle, RefreshCw, Calendar } from "lucide-react";
+import { HelpCircle, RefreshCw } from "lucide-react";
 
 // --- Types ---
 type DailyMetric = {
@@ -29,6 +28,14 @@ type CampaignMetric = {
     cpc: number;
     cpa: number;
     roas: number;
+    // Optional for Ads
+    adName?: string;
+    campaignName?: string;
+    // New Metrics
+    hookRate: number;
+    holdRate: number;
+    connectRate: number;
+    leads?: number; // Ensure leads is typed if used
 };
 
 type DashboardProps = {
@@ -44,6 +51,12 @@ type DashboardProps = {
         roas: number;
         cpm: number;
         frequency: number;
+        // New Totals
+        videoViews3s: number;
+        videoThruplays: number;
+        linkClicks: number;
+        landingPageViews: number;
+        leads: number;
     };
     daily: DailyMetric[];
     campaigns: CampaignMetric[];
@@ -193,7 +206,9 @@ const TrafficFunnel = ({
     conversions,
     frequency,
     cpm,
-    label = "Compras"
+    label = "Compras",
+    landingPageViews, // New Prop
+    linkClicks // New Prop
 }: {
     impressions: number;
     clicks: number;
@@ -201,19 +216,21 @@ const TrafficFunnel = ({
     frequency: number;
     cpm: number;
     label?: string;
+    landingPageViews?: number;
+    linkClicks?: number;
 }) => {
 
     // Derived Metrics
-    // Mock "Page Views" = 90% of Clicks (Connect Rate approximation)
-    const pageViews = Math.round(clicks * 0.9165);
-    // Mock "Checkouts" = 30% of Page Views
-    const checkouts = Math.round(pageViews * 0.3219);
+    // Real Data or Derivatives
+    // We need to update TrafficFunnel signature to accept landingPageViews
+    const safePageViews = landingPageViews || Math.round(clicks * 0.8); // Fallback if 0th.round(clicks * 0.8); // Fallback if 0
+    // Mock "Checkouts" if not passed
+    const checkouts = Math.round(safePageViews * 0.15);
 
     // Rates for side display
     const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-    const connectRate = clicks > 0 ? (pageViews / clicks) * 100 : 0;
-    const checkoutRate = pageViews > 0 ? (checkouts / pageViews) * 100 : 0;
-    const purchaseRate = checkouts > 0 ? (conversions / checkouts) * 100 : 0;
+    const connectRate = linkClicks && linkClicks > 0 ? (safePageViews / linkClicks) * 100 : (clicks > 0 ? (safePageViews / clicks) * 100 : 0);
+    const conversionRate = safePageViews > 0 ? (conversions / safePageViews) * 100 : 0;
 
     const formatUncertain = (val: number) => val === 0 ? "0" : new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(val);
 
@@ -244,7 +261,7 @@ const TrafficFunnel = ({
                     />
                     <FunnelLayer
                         label="Page Views"
-                        value={formatUncertain(pageViews)}
+                        value={formatUncertain(safePageViews)}
                         widthPercent={82}
                         color="#0284c7" // Sky 600
                         zIndex={3}
@@ -274,16 +291,16 @@ const TrafficFunnel = ({
                         <div className="text-xl font-bold text-white">{ctr.toFixed(2)}%</div>
                     </div>
                     <div className="flex flex-col items-end">
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Cliques</div>
+                        <div className="text-xl font-bold text-white">{ctr.toFixed(2)}%</div>
+                    </div>
+                    <div className="flex flex-col items-end">
                         <div className="text-[10px] text-gray-400 uppercase tracking-widest">Connect Rate</div>
                         <div className="text-xl font-bold text-white">{connectRate.toFixed(2)}%</div>
                     </div>
                     <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Checkout</div>
-                        <div className="text-xl font-bold text-white">{checkoutRate.toFixed(2)}%</div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de {label}</div>
-                        <div className="text-xl font-bold text-white">{purchaseRate.toFixed(2)}%</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Conversão</div>
+                        <div className="text-xl font-bold text-white">{conversionRate.toFixed(2)}%</div>
                     </div>
                 </div>
 
@@ -414,10 +431,7 @@ const MainChart = ({ data }: { data: DailyMetric[] }) => {
 
 // --- Main Layout ---
 
-import { syncMetaAds } from "@/server/actions/sync";
 import { useState } from "react";
-
-// ... (existing imports)
 
 // --- Heatmap Helper ---
 // Simplified to return consistent, readable background styles
@@ -440,52 +454,34 @@ const getHeatmapStyle = (value: number, min: number, max: number, inverse = fals
     return { backgroundColor: 'rgba(59, 130, 246, 0.50)', color: 'white', fontWeight: 'bold' }; // Blue 500 at 50%
 };
 
-export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, dateRangeLabel, mode = 'ecommerce' }: DashboardProps) {
-    const [isSyncing, setIsSyncing] = useState(false);
+export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode = 'ecommerce' }: DashboardProps) {
     const [activeTab, setActiveTab] = useState<'campaigns' | 'ads'>('campaigns'); // Cleaned up type
 
-    // ... (sync logic)
+    // safeMap helpers - Typed 
+    const safeMap = (arr: CampaignMetric[], key: keyof CampaignMetric) => arr.map(i => Number(i[key] || 0));
+    // safeMapDeep is redundant now, removed.
 
-    const handleSync = async () => {
-        setIsSyncing(true);
-        try {
-            const result = await syncMetaAds();
-            if (result.success) {
-                alert(`Sucesso: ${result.message || "Sincronização concluída"}`);
-                window.location.reload();
-            } else {
-                alert(`Erro: ${result.error}`);
-            }
-        } catch (error) {
-            alert("Erro na chamada de sincronização.");
-            console.error(error);
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
-    const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], spend: 0, impressions: 0, clicks: 0, conversions: 0, value: 0, roas: 0 }];
+    const safeDaily = daily.map(d => ({
+        ...d,
+        date: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    }));
 
     // Prepare Data for Table based on Active Tab
     const tableData = activeTab === 'ads' ? ads : campaigns;
     const isCapture = mode === 'capture';
-
-    // Helper to safely get Number values
-    const safeMap = (arr: any[], key: string) => arr.map(d => Number(d[key] || 0));
-    const safeMapDeep = (arr: any[], key: string) => arr.map(d => Number((d as any)[key] || 0));
 
     // Min/Max for Heatmap - Calculated safely
     const spendVals = safeMap(tableData, 'spend');
     const maxSpend = Math.max(...spendVals, 0);
     const minSpend = Math.min(...spendVals, 0);
 
-    const resultApi = isCapture ? 'leads' : 'conversions';
-    const resultVals = safeMapDeep(tableData, resultApi);
+    const resultApi = isCapture ? 'leads' : 'conversions'; // 'leads' key exists now
+    const resultVals = safeMap(tableData, resultApi as keyof CampaignMetric);
     const maxResults = Math.max(...resultVals, 0);
     const minResults = Math.min(...resultVals, 0);
 
-    const costApi = isCapture ? 'cpl' : 'cpa';
-    const costVals = safeMapDeep(tableData, costApi);
+    const costApi = 'cpa'; // CPL is stored as CPA in metrics
+    const costVals = safeMap(tableData, costApi);
     const maxCost = Math.max(...costVals, 0);
     const minCost = Math.min(...costVals, 0);
 
@@ -499,8 +495,8 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
             {/* ... Header & KPI ... */}
             {/* ... (Keeping existing layout code) ... */}
 
-            {/* KPI Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* KPI Cards Row 1: Investment, Impressions, Clicks, CTR, Page Views, Leads */}
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <MetricCard
                     title="Investimento"
                     value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.spend)}
@@ -510,70 +506,131 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                     dataKey="spend"
                     color="#ef4444"
                 />
-                {!isCapture && (
-                    <MetricCard
-                        title="Faturamento"
-                        value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.value)}
-                        subValue="22.4%"
-                        trend={-1}
-                        chartData={safeDaily}
-                        dataKey="value"
-                        color="#22c55e"
-                    />
-                )}
                 <MetricCard
-                    title={isCapture ? "Leads" : "Compras"}
-                    value={totals.conversions.toLocaleString()}
-                    subValue="23.8%"
-                    trend={-1}
+                    title="Visualizações"
+                    value={new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(totals.impressions)}
+                    subValue="--"
+                    trend={0}
                     chartData={safeDaily}
-                    dataKey="conversions"
+                    dataKey="impressions"
                     color="#3b82f6"
                 />
-                {isCapture && (
-                    <MetricCard
-                        title="Custo por Lead (CPL)"
-                        value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.cpa)}
-                        subValue="--%"
-                        trend={0}
-                        chartData={safeDaily}
-                        dataKey="spend"
-                        color="#eab308"
-                    />
-                )}
-                {!isCapture && (
-                    <MetricCard
-                        title="ROAS Médio"
-                        value={totals.roas.toFixed(2)}
-                        subValue="8.1%"
-                        trend={1}
-                        chartData={safeDaily}
-                        dataKey="roas"
-                        color="#a855f7"
-                    />
-                )}
-                {!isCapture && (
-                    <MetricCard
-                        title="Custo por Compra (CPA)"
-                        value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.cpa)}
-                        subValue="5.8%"
-                        trend={1}
-                        chartData={safeDaily}
-                        dataKey="spend"
-                        color="#eab308"
-                    />
-                )}
-                {isCapture && (
-                    <MetricCard
-                        title="CTR (Link)"
-                        value={totals.ctr.toFixed(2) + "%"}
-                        subValue="--"
-                        trend={1}
-                        chartData={safeDaily}
-                        dataKey="clicks"
-                        color="#a855f7"
-                    />
-                )}
+                <MetricCard
+                    title="Cliques"
+                    value={new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(totals.clicks)}
+                    subValue="--"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="clicks"
+                    color="#a855f7"
+                />
+                <MetricCard
+                    title="CTR"
+                    value={totals.ctr.toFixed(2) + "%"}
+                    subValue="Avg"
+                    trend={1}
+                    chartData={safeDaily}
+                    dataKey="clicks" // Proxy
+                    color="#eab308"
+                />
+                <MetricCard
+                    title="Page Views"
+                    value={new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(totals.landingPageViews || 0)}
+                    subValue="LP Views"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="clicks" // Proxy
+                    color="#22c55e"
+                />
+                <MetricCard
+                    title="Leads"
+                    value={totals.leads.toLocaleString()}
+                    subValue="Total"
+                    trend={1}
+                    chartData={safeDaily}
+                    dataKey="conversions" // Proxy if leads not in daily
+                    color="#f97316"
+                />
+            </div>
+
+            {/* KPI Cards Row 2: CPL, CPM, Connect Rate, Hook Rate, Hold Rate */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <MetricCard
+                    title="Custo por Lead (CPL)"
+                    value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.leads > 0 ? totals.spend / totals.leads : 0)}
+                    subValue="CPL"
+                    trend={-1}
+                    chartData={safeDaily}
+                    dataKey="spend" // Proxy
+                    color="#ef4444"
+                />
+                <MetricCard
+                    title="CPM"
+                    value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totals.cpm)}
+                    subValue="CPM"
+                    trend={-1}
+                    chartData={safeDaily}
+                    dataKey="impressions" // Proxy
+                    color="#64748b"
+                />
+                <MetricCard
+                    title="Connect Rate"
+                    value={totals.linkClicks > 0 ? ((totals.landingPageViews / totals.linkClicks) * 100).toFixed(2) + "%" : "0.00%"}
+                    subValue="PV / Link Click"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="clicks"
+                    color="#f472b6"
+                />
+                <MetricCard
+                    title="Hook Rate (3s)"
+                    value={totals.impressions > 0 ? ((totals.videoViews3s / totals.impressions) * 100).toFixed(2) + "%" : "0.00%"}
+                    subValue="3s / Impressions"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="impressions"
+                    color="#2dd4bf"
+                />
+                <MetricCard
+                    title="Hold Rate"
+                    value={totals.videoViews3s > 0 ? ((totals.videoThruplays / totals.videoViews3s) * 100).toFixed(2) + "%" : "0.00%"}
+                    subValue="Thru / 3s"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="impressions"
+                    color="#fbbf24"
+                />
+            </div>
+
+            {/* Second Row: Video & Connect Metrics (Only for Capture/Lead Gen usually, but good for all) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <MetricCard
+                    title="Connect Rate"
+                    value={totals.linkClicks > 0 ? ((totals.landingPageViews / totals.linkClicks) * 100).toFixed(2) + "%" : "0.00%"}
+                    subValue="LP Views / Clicks"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="clicks" // Proxy
+                    color="#f472b6"
+                />
+                <MetricCard
+                    title="Hook Rate (3s)"
+                    value={totals.impressions > 0 ? ((totals.videoViews3s / totals.impressions) * 100).toFixed(2) + "%" : "0.00%"}
+                    subValue="3s / Impressions"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="impressions" // Proxy
+                    color="#2dd4bf"
+                />
+                <MetricCard
+                    title="Hold Rate"
+                    value={totals.videoViews3s > 0 ? ((totals.videoThruplays / totals.videoViews3s) * 100).toFixed(2) + "%" : "0.00%"}
+                    subValue="ThruPlay / 3s"
+                    trend={0}
+                    chartData={safeDaily}
+                    dataKey="impressions" // Proxy
+                    color="#fbbf24"
+                />
             </div>
 
             {/* Charts Section */}
@@ -587,6 +644,8 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                         cpm={totals.cpm}
                         frequency={totals.frequency}
                         label={isCapture ? "Leads" : "Compras"}
+                        landingPageViews={totals.landingPageViews}
+                        linkClicks={totals.linkClicks}
                     />
                 </div>
 
@@ -623,6 +682,9 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                                 <tr className="text-gray-400 text-[11px] uppercase tracking-wider">
                                     <th className="px-4 py-3 font-medium w-6 bg-[#0f111a]">#</th>
                                     <th className="px-4 py-3 font-medium bg-[#0f111a]">Nome</th>
+                                    {activeTab === 'campaigns' && isCapture && (
+                                        <th className="px-4 py-3 font-medium bg-[#0f111a]">Melhor Anúncio</th>
+                                    )}
                                     <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">Investimento</th>
                                     <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'Leads' : 'Compras'}</th>
                                     <th className="px-4 py-3 font-medium text-right bg-[#0f111a]">{isCapture ? 'CPL' : 'CPA'}</th>
@@ -631,16 +693,38 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                             </thead>
                             <tbody className="divide-y divide-gray-800/50 text-sm">
                                 {tableData.map((item, i) => {
-                                    const resultVal = isCapture ? (item as any).leads || 0 : item.conversions;
-                                    const costVal = isCapture ? (item as any).cpl || 0 : item.cpa;
+                                    // Use type-safe properties now that CampaignMetric has them
+                                    const resultVal = isCapture ? item.leads || 0 : item.conversions;
+                                    const costVal = isCapture ? item.cpa : item.cpa; // CPL is CPA here
                                     const finalVal = isCapture ? item.ctr : item.roas;
+
+                                    // Find Best Ad for this Campaign (if in Campaign tab & capture mode)
+                                    let bestAdName = "--";
+                                    if (activeTab === 'campaigns' && isCapture) {
+                                        const campaignAds = ads.filter(a => a.campaignName === item.name);
+                                        if (campaignAds.length > 0) {
+                                            // Sort by leads (desc) then CPL (asc)
+                                            const sortedAds = campaignAds.sort((a, b) => {
+                                                const leadsA = a.leads || 0;
+                                                const leadsB = b.leads || 0;
+                                                if (leadsB !== leadsA) return leadsB - leadsA;
+                                                return a.cpa - b.cpa;
+                                            });
+                                            bestAdName = sortedAds[0].adName || "--";
+                                        }
+                                    }
 
                                     return (
                                         <tr key={i} className="hover:bg-blue-500/5 transition-colors cursor-pointer group border-b border-gray-800/30">
                                             <td className="px-4 py-3 text-gray-500 text-xs">{i + 1}.</td>
-                                            <td className="px-4 py-3 font-medium text-white max-w-[200px] truncate group-hover:text-blue-400 transition-colors" title={isCapture && activeTab === 'ads' ? (item as any).adName : item.name}>
-                                                {activeTab === 'ads' && (item as any).adName ? (item as any).adName : item.name}
+                                            <td className="px-4 py-3 font-medium text-white max-w-[200px] truncate group-hover:text-blue-400 transition-colors" title={(activeTab === 'ads' && item.adName) ? item.adName : item.name}>
+                                                {(activeTab === 'ads' && item.adName) ? item.adName : item.name}
                                             </td>
+                                            {activeTab === 'campaigns' && isCapture && (
+                                                <td className="px-4 py-3 text-gray-400 text-xs italic truncate max-w-[150px]" title={bestAdName}>
+                                                    {bestAdName}
+                                                </td>
+                                            )}
                                             <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.spend, minSpend, maxSpend)}>
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.spend)}
                                             </td>
@@ -682,9 +766,9 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={campaigns.slice(0, 5)}
-                                    dataKey="conversions"
-                                    nameKey="name"
+                                    data={isCapture ? ads.slice(0, 5) : campaigns.slice(0, 5)} // Use Ads for Capture
+                                    dataKey={isCapture ? "leads" : "conversions"} // Use leads for Capture
+                                    nameKey={isCapture ? "adName" : "name"} // Use adName for Capture
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
@@ -705,15 +789,17 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, date
                     </div>
                     {/* Legend */}
                     <div className="space-y-1 mt-2">
-                        {campaigns.slice(0, 3).map((c, i) => (
-                            <div key={i} className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2 max-w-[70%]">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ["#3b82f6", "#22c55e", "#a855f7"][i] }}></div>
-                                    <span className="truncate text-gray-400">{c.name}</span>
+                        <div className="space-y-1 mt-2">
+                            {(isCapture ? ads : campaigns).slice(0, 3).map((c, i) => (
+                                <div key={i} className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-2 max-w-[70%]">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ["#3b82f6", "#22c55e", "#a855f7"][i] }}></div>
+                                        <span className="truncate text-gray-400">{(isCapture && c.adName) ? c.adName : c.name}</span>
+                                    </div>
+                                    <span className="text-white font-medium">{isCapture ? c.leads : c.conversions}</span>
                                 </div>
-                                <span className="text-white font-medium">{c.conversions}</span>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </Card >
             </div >
