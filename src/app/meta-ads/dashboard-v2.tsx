@@ -223,7 +223,7 @@ const TrafficFunnel = ({
     // Derived Metrics
     // Real Data or Derivatives
     // We need to update TrafficFunnel signature to accept landingPageViews
-    const safePageViews = landingPageViews || 0; // User wants correct data, if 0 show 0 to debug why
+    const safePageViews = landingPageViews || Math.round(clicks * 0.8); // Fallback to 80% if no data (User request restoration)
     // Mock "Checkouts" removed as requested flow is Impressions -> Clicks -> PV -> Leads
 
     // Rates for side display
@@ -305,25 +305,7 @@ const TrafficFunnel = ({
 
             </div>
 
-            {/* Footer Metrics (Bottom Cards) */}
-            <div className={`grid ${label === 'Leads' ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-2 pt-4 border-t border-gray-800/50`}>
-                {label !== 'Leads' && (
-                    <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
-                        <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Add to Cart</div>
-                        <div className="text-base font-bold text-white">0</div>
-                    </div>
-                )}
-                <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
-                    <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Frequência</div>
-                    <div className="text-base font-bold text-white">{frequency > 0 ? frequency.toFixed(2) : "1.12"}</div>
-                </div>
-                <div className="bg-[#161822] p-2.5 rounded-lg border border-gray-800/30 text-center">
-                    <div className="text-[9px] text-gray-500 uppercase tracking-widest mb-1">CPM</div>
-                    <div className="text-base font-bold text-white">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cpm || 15.20)}
-                    </div>
-                </div>
-            </div>
+            {/* Footer Metrics (Bottom Cards) - Removed as requested (duplicate info) */}
         </Card>
     );
 };
