@@ -54,7 +54,7 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         date: campaignMetrics.date,
         cpm: campaignMetrics.cpm,
         frequency: campaignMetrics.frequency,
-        adName: campaignMetrics.adName,
+        adName: campaignMetrics.adName, // Explicitly selecting adName
     })
         .from(campaignMetrics)
         .innerJoin(integrations, eq(campaignMetrics.integrationId, integrations.id))
