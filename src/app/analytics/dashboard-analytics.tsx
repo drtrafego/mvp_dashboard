@@ -158,7 +158,9 @@ export default function AnalyticsDashboard({
     osData,
     deviceData,
     weekData,
+    weekData,
     cityData,
+    regionData
 }: AnalyticsDashboardProps) {
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -275,9 +277,13 @@ export default function AnalyticsDashboard({
 
                 {/* Left: Map & Table (4 cols) */}
                 <div className="lg:col-span-4 flex flex-col gap-4">
+                    import {BrazilGridMap} from "@/components/analytics/BrazilGridMap";
+
+                    // ... (inside component)
+
                     {/* Map Card */}
-                    <Card className="flex-1 min-h-[200px] relative p-0 overflow-hidden">
-                        <BrazilMapMock />
+                    <Card className="flex-1 min-h-[200px] relative p-0 overflow-hidden flex items-center justify-center bg-[#0f111a]">
+                        <BrazilGridMap data={regionData || []} />
                         <div className="absolute top-4 left-4">
                             <h3 className="text-sm font-semibold text-white">Geografia</h3>
                         </div>
