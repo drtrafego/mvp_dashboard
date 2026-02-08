@@ -46,7 +46,6 @@ type DashboardProps = {
         frequency: number;
     };
     daily: DailyMetric[];
-    daily: DailyMetric[];
     campaigns: CampaignMetric[];
     ads: CampaignMetric[]; // Reusing type as structure is identical
     dateRangeLabel: string;
