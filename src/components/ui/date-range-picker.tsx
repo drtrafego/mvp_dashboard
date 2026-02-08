@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { CalendarIcon } from "lucide-react"
-import { addDays, format } from "date-fns"
+import { addDays, format, subDays } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { DateRange } from "react-day-picker"
 
@@ -14,13 +14,43 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+
 export function DatePickerWithRange({
     className,
 }: React.HTMLAttributes<HTMLDivElement>) {
-    const [date, setDate] = React.useState<DateRange | undefined>({
-        from: new Date(new Date().getFullYear(), 0, 12),
-        to: addDays(new Date(new Date().getFullYear(), 0, 12), 30),
-    })
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Initialize state from URL or default
+    const [date, setDate] = React.useState<DateRange | undefined>(() => {
+        const fromParam = searchParams.get("from");
+        const toParam = searchParams.get("to");
+
+        if (fromParam && toParam) {
+            return {
+                from: new Date(fromParam),
+                to: new Date(toParam)
+            };
+        }
+
+        // Default: Last 30 days
+        return {
+            from: subDays(new Date(), 30),
+            to: new Date(),
+        };
+    });
+
+    // Update URL when date changes
+    useEffect(() => {
+        if (date?.from && date?.to) {
+            const params = new URLSearchParams(searchParams);
+            params.set("from", format(date.from, "yyyy-MM-dd"));
+            params.set("to", format(date.to, "yyyy-MM-dd"));
+            router.push(`?${params.toString()}`);
+        }
+    }, [date, router, searchParams]);
 
     const presets = [
         { label: "Últimos 7 dias", days: 7 },
@@ -28,7 +58,6 @@ export function DatePickerWithRange({
         { label: "Últimos 30 dias", days: 30 },
         { label: "Últimos 60 dias", days: 60 },
         { label: "Últimos 90 dias", days: 90 },
-        { label: "Todo o período", days: null },
     ];
 
     const handlePresetSelect = (days: number | null) => {

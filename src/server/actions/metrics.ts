@@ -26,7 +26,7 @@ export type DashboardMetrics = {
     daily: any[];
 };
 
-export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
+export async function getMetaAdsMetrics(from?: string, to?: string): Promise<DashboardMetrics> {
     const session = await auth();
     if (!session?.user?.email) throw new Error("Não autenticado");
 
@@ -37,7 +37,9 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
     const orgId = user.organizationId;
 
     // Filter by Date
-    const startDate = startOfDay(subDays(new Date(), days));
+    // If no date provided, default to last 30 days
+    const endDate = to ? new Date(to) : new Date();
+    const startDate = from ? new Date(from) : subDays(new Date(), 30);
 
     // Fetch Raw Data
     // We join with integrations to ensure we only get 'meta' provider data
@@ -59,7 +61,8 @@ export async function getMetaAdsMetrics(days = 90): Promise<DashboardMetrics> {
         .where(and(
             eq(campaignMetrics.organizationId, orgId),
             eq(integrations.provider, "meta"),
-            gte(campaignMetrics.date, startDate)
+            gte(campaignMetrics.date, startDate),
+            sql`${campaignMetrics.date} <= ${endDate}` // Use SQL for upper bound to be safe with timestamps
         ));
 
     // Aggregation

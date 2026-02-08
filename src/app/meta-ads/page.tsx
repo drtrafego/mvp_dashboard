@@ -1,7 +1,7 @@
 import { getAdAccountSettings } from "@/server/actions/ad-account-settings";
 import { getMetaAdsMetrics } from "@/server/actions/metrics";
 
-export default async function MetaAdsPage() {
+export default async function MetaAdsPage({ searchParams }: { searchParams: { from?: string; to?: string } }) {
     const settings = await getAdAccountSettings();
     const isConnected = Boolean(settings?.facebookAdAccountId);
 
@@ -22,7 +22,7 @@ export default async function MetaAdsPage() {
             {!isConnected ? (
                 <NotConnectedState platform="Meta Ads" />
             ) : (
-                <MetaAdsContent />
+                <MetaAdsContent searchParams={searchParams} />
             )}
         </div>
     );
@@ -51,8 +51,12 @@ function NotConnectedState({ platform }: { platform: string }) {
 
 import MetaAdsDashboardV2 from "./dashboard-v2";
 
-async function MetaAdsContent() {
-    const { totals, daily, campaigns, ads } = await getMetaAdsMetrics(90);
+async function MetaAdsContent({ searchParams }: { searchParams?: { from?: string; to?: string } }) {
+    const { totals, daily, campaigns, ads } = await getMetaAdsMetrics(searchParams?.from, searchParams?.to);
+
+    const dateRangeLabel = searchParams?.from && searchParams?.to
+        ? `${new Date(searchParams.from).toLocaleDateString()} - ${new Date(searchParams.to).toLocaleDateString()}`
+        : "Últimos 30 Dias";
 
     return (
         <MetaAdsDashboardV2
@@ -60,7 +64,7 @@ async function MetaAdsContent() {
             daily={daily}
             campaigns={campaigns}
             ads={ads}
-            dateRangeLabel="Últimos 90 Dias"
+            dateRangeLabel={dateRangeLabel}
         />
     );
 }
