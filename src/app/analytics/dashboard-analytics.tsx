@@ -287,7 +287,7 @@ export default function AnalyticsDashboard({
                     <Card className="h-[180px] !p-0 overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] flex justify-between items-center">
                             <span className="text-xs font-bold text-gray-400 uppercase">Localização</span>
-                            <span className="text-[10px] text-gray-600">v1.5 (Live)</span>
+                            <span className="text-[10px] text-gray-600">v2.0 (Live)</span>
                             <span className="text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
                         </div>
                         <div className="overflow-y-auto h-full pb-8">
