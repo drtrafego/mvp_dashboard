@@ -582,8 +582,11 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                 />
                 <MetricCard
                     title="Connect Rate"
-                    value={totals.linkClicks > 0 ? ((totals.landingPageViews / totals.linkClicks) * 100).toFixed(2) + "%" : "0.00%"}
-                    subValue="PV / Link Click"
+                    value={(totals.linkClicks > 0
+                        ? (totals.landingPageViews / totals.linkClicks)
+                        : (totals.clicks > 0 ? totals.landingPageViews / totals.clicks : 0)
+                        * 100).toFixed(2) + "%"}
+                    subValue={totals.linkClicks > 0 ? "PV / Link Click" : "PV / Clique"}
                     trend={0}
                     chartData={safeDaily}
                     dataKey="clicks"
