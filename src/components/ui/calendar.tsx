@@ -21,7 +21,7 @@ function Calendar({
             showOutsideDays={showOutsideDays}
             className={cn("p-3", className)}
             classNames={{
-                months: "flex flex-col md:flex-row space-y-4 md:space-x-4 md:space-y-0",
+                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
                 month: "space-y-4",
                 caption: "flex justify-center pt-1 relative items-center",
                 caption_label: "text-sm font-medium",
@@ -34,11 +34,11 @@ function Calendar({
                 table: "w-full border-collapse space-y-1",
                 head_row: "flex",
                 head_cell:
-                    "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                    "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] shrink-0", // Added shrink-0
                 row: "flex w-full mt-2",
-                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 shrink-0", // Added shrink-0
                 day: cn(
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent rounded-md flex items-center justify-center transition"
+                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent rounded-md flex items-center justify-center transition shrink-0" // Added shrink-0
                 ),
                 day_range_end: "day-range-end",
                 day_selected:
