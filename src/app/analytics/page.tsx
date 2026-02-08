@@ -43,6 +43,8 @@ export default async function AnalyticsPage() {
                         osData={metrics.osData}
                         deviceData={metrics.deviceData}
                         weekData={metrics.weekData}
+                        cityData={metrics.cityData}
+                        regionData={metrics.regionData}
                         dateRangeLabel="Últimos 90 dias"
                     />
                 ) : (

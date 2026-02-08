@@ -33,7 +33,7 @@ type AnalyticsPageData = {
 type DimensionData = {
     name: string;
     value: number;
-    color: string;
+    color?: string;
 };
 
 type AnalyticsDashboardProps = {
@@ -51,7 +51,9 @@ type AnalyticsDashboardProps = {
     osData: DimensionData[];
     deviceData: DimensionData[];
     weekData: { day: string; value: number }[];
-    dateRangeLabel: string;
+    dateRangeLabel?: string;
+    cityData?: DimensionData[];
+    regionData?: DimensionData[];
 };
 
 // --- Components ---
@@ -146,6 +148,7 @@ const BrazilMapMock = () => (
 // --- Main Layout ---
 
 import { syncGA4 } from "@/server/actions/sync-google";
+import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 
 // ... (existing imports)
 
@@ -157,7 +160,9 @@ export default function AnalyticsDashboard({
     osData,
     deviceData,
     weekData,
-    dateRangeLabel
+    dateRangeLabel,
+    cityData,
+    regionData
 }: AnalyticsDashboardProps) {
     const [isSyncing, setIsSyncing] = useState(false);
 
@@ -217,9 +222,8 @@ export default function AnalyticsDashboard({
                         Região <ArrowDown size={14} />
                     </button>
 
-                    <div className="flex items-center gap-2 bg-[#0f111a] hover:bg-[#1a1d2d] border border-gray-800 text-white px-4 py-2 rounded-lg text-sm transition-all pointer-events-none opacity-80">
-                        <Calendar size={16} className="text-gray-400" />
-                        {dateRangeLabel}
+                    <div className="flex items-center gap-3 bg-[#0f111a] p-1 rounded-lg border border-gray-800/50">
+                        <DatePickerWithRange />
                     </div>
                 </div>
             </header>
@@ -289,26 +293,24 @@ export default function AnalyticsDashboard({
                     {/* Region Table */}
                     <Card className="h-[180px] !p-0 overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] flex justify-between">
-                            <span className="text-xs font-bold text-gray-400 uppercase">Região</span>
-                            <span className="text-xs font-bold text-gray-400 uppercase">Cidade</span>
-                            <span className="text-xs font-bold text-gray-400 uppercase">Acessos</span>
+                            <span className="text-xs font-bold text-gray-400 uppercase">Localização</span>
+                            <span className="text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
                         </div>
                         <div className="overflow-y-auto h-full pb-8">
-                            {[
-                                { r: 'São Paulo', c: 'São Paulo', v: 942 },
-                                { r: 'Rio de Janeiro', c: 'Rio de Janeiro', v: 231 },
-                                { r: 'Minas Gerais', c: 'Belo Horizonte', v: 216 },
-                                { r: 'Distrito Federal', c: 'Brasília', v: 191 },
-                                { r: 'Goiás', c: 'Goiânia', v: 171 },
-                            ].map((item, i) => (
+                            {(cityData && cityData.length > 0 ? cityData : [
+                                { name: 'São Paulo', value: 942 },
+                                { name: 'Rio de Janeiro', value: 231 },
+                                { name: 'Belo Horizonte', value: 216 },
+                                { name: 'Brasília', value: 191 },
+                                { name: 'Goiânia', value: 171 },
+                            ]).map((item: any, i: number) => (
                                 <div key={i} className="flex justify-between px-4 py-2 text-xs border-b border-gray-800/30 hover:bg-white/5">
-                                    <span className="text-gray-300 w-1/3 truncate">{item.r}</span>
-                                    <span className="text-gray-400 w-1/3 truncate">{item.c}</span>
+                                    <span className="text-gray-300 w-2/3 truncate">{item.name}</span>
                                     {/* Bar visual for value */}
                                     <div className="w-1/3 flex items-center justify-end gap-2">
-                                        <span className="text-white font-mono">{item.v}</span>
+                                        <span className="text-white font-mono">{item.value}</span>
                                         <div className="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-orange-500" style={{ width: `${(item.v / 942) * 100}%` }}></div>
+                                            <div className="h-full bg-orange-500" style={{ width: `${(item.value / (cityData?.[0]?.value || 942)) * 100}%` }}></div>
                                         </div>
                                     </div>
                                 </div>
