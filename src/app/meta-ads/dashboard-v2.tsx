@@ -310,28 +310,39 @@ const TrafficFunnel = ({
     );
 };
 
-const MainChart = ({ data }: { data: DailyMetric[] }) => {
+const MainChart = ({ data, label = 'Compras' }: { data: DailyMetric[], label?: string }) => {
+    const isLeads = label === 'Leads';
+    const mainColor = isLeads ? "#f472b6" : "#22c55e"; // Pink for Leads, Green for Sales
+    const secondaryColor = "#3b82f6"; // Blue for Spend/Value
+
+    const totalValue = data.reduce((acc, curr) => acc + (isLeads ? (curr.leads || 0) : curr.conversions), 0);
+    const valueKey = isLeads ? "leads" : "conversions";
+    const valueName = isLeads ? "Leads" : "Compras";
+    const moneyKey = isLeads ? "spend" : "value";
+    const moneyName = isLeads ? "Investimento" : "Faturamento";
+
     return (
         <Card className="h-full min-h-[400px]">
             <div className="flex justify-between items-center mb-6 pl-2">
                 <div className="flex flex-col">
                     <h3 className="text-3xl font-bold text-white mb-1">
-                        {data.reduce((acc, curr) => acc + curr.conversions, 0).toLocaleString()}
+                        {totalValue.toLocaleString()}
                     </h3>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs uppercase tracking-wide text-gray-400">Total Compras</span>
+                        <span className="text-xs uppercase tracking-wide text-gray-400">Total {valueName}</span>
+                        {/* Placeholder trend for now */}
                         <span className="text-xs text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded ml-2">▲ 22.4%</span>
                     </div>
                 </div>
 
                 <div className="flex gap-6 pr-4">
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></span>
-                        <span className="text-sm text-gray-300">Compras</span>
+                        <span className="w-2 h-2 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ backgroundColor: mainColor, boxShadow: `0 0 10px ${mainColor}80` }}></span>
+                        <span className="text-sm text-gray-300">{valueName}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                        <span className="text-sm text-gray-300">Faturamento</span>
+                        <span className="text-sm text-gray-300">{moneyName}</span>
                     </div>
                 </div>
             </div>
@@ -339,13 +350,13 @@ const MainChart = ({ data }: { data: DailyMetric[] }) => {
             <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
-                        <linearGradient id="mainColorSales" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.4} />
-                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                        <linearGradient id="mainColorPrimary" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={mainColor} stopOpacity={0.4} />
+                            <stop offset="95%" stopColor={mainColor} stopOpacity={0} />
                         </linearGradient>
-                        <linearGradient id="mainColorValue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                        <linearGradient id="mainColorSecondary" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={secondaryColor} stopOpacity={0.2} />
+                            <stop offset="95%" stopColor={secondaryColor} stopOpacity={0} />
                         </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3b" vertical={false} />
@@ -353,7 +364,12 @@ const MainChart = ({ data }: { data: DailyMetric[] }) => {
                         dataKey="date"
                         stroke="#6b7280"
                         fontSize={11}
-                        tickFormatter={(val) => val.split("-")[2] + '/' + val.split("-")[1]}
+                        tickFormatter={(val) => {
+                            if (!val) return "";
+                            const parts = val.split("/");
+                            if (parts.length >= 2) return `${parts[0]}/${parts[1]}`;
+                            return val;
+                        }}
                         tickMargin={12}
                         axisLine={false}
                         tickLine={false}
@@ -387,22 +403,22 @@ const MainChart = ({ data }: { data: DailyMetric[] }) => {
                     <Area
                         yAxisId="right"
                         type="monotone"
-                        dataKey="value"
-                        stroke="#3b82f6"
+                        dataKey={moneyKey}
+                        stroke={secondaryColor}
                         strokeWidth={2}
                         fillOpacity={1}
-                        fill="url(#mainColorValue)"
-                        name="Faturamento"
+                        fill="url(#mainColorSecondary)"
+                        name={moneyName}
                     />
                     <Area
                         yAxisId="left"
                         type="monotone"
-                        dataKey="conversions"
-                        stroke="#22c55e"
+                        dataKey={valueKey}
+                        stroke={mainColor}
                         strokeWidth={2}
                         fillOpacity={1}
-                        fill="url(#mainColorSales)"
-                        name="Compras"
+                        fill="url(#mainColorPrimary)"
+                        name={valueName}
                     />
                 </AreaChart>
             </ResponsiveContainer>
@@ -603,7 +619,7 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
 
                 {/* Main Line Chart (Right - 50%) */}
                 <div className="lg:col-span-1">
-                    <MainChart data={safeDaily} />
+                    <MainChart data={safeDaily} label={isCapture ? "Leads" : "Compras"} />
                 </div>
             </div>
 
