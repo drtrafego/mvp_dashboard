@@ -43,7 +43,7 @@ export default async function DebugGA4Page() {
     try {
         // Try to fetch via the official dashboard action if possible
         // If imports fail, we might comment this out or use a generic fetcher
-        actionResult = await getAnalyticsMetrics(90);
+        actionResult = await getAnalyticsMetrics();
     } catch (e: any) {
         actionError = e.message;
     }

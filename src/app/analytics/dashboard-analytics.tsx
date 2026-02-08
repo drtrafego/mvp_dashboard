@@ -52,7 +52,6 @@ type AnalyticsDashboardProps = {
     deviceData: DimensionData[];
     weekData: { day: string; value: number }[];
     cityData?: DimensionData[];
-    regionData?: DimensionData[];
 };
 
 // --- Components ---
@@ -160,7 +159,6 @@ export default function AnalyticsDashboard({
     deviceData,
     weekData,
     cityData,
-    regionData
 }: AnalyticsDashboardProps) {
     const [isSyncing, setIsSyncing] = useState(false);
 
