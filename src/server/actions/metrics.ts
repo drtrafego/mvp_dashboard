@@ -111,7 +111,6 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         totalClicks += clicks;
         totalConversions += conv;
         totalLeads += leads;
-        totalLeads += leads;
         totalConversionValue += val;
         totalVideoViews3s += v3s;
         totalVideoThruplays += vThru;
@@ -127,7 +126,6 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
                 clicks: 0,
                 conversions: 0,
                 leads: 0, // Added
-                leads: 0, // Added
                 value: 0,
                 videoViews3s: 0,
                 videoThruplays: 0,
@@ -141,7 +139,6 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
         d.impressions += imps;
         d.clicks += clicks;
         d.conversions += conv;
-        d.leads += leads;
         d.leads += leads;
         d.value += val;
         d.videoViews3s += v3s;
@@ -158,7 +155,6 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
                 spend: 0,
                 impressions: 0,
                 clicks: 0,
-                conversions: 0,
                 conversions: 0,
                 leads: 0,
                 value: 0,
@@ -190,7 +186,6 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
                 spend: 0,
                 impressions: 0,
                 clicks: 0,
-                conversions: 0,
                 conversions: 0,
                 leads: 0,
                 value: 0,
