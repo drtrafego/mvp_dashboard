@@ -20,7 +20,6 @@ export type DashboardMetrics = {
         cpm: number;
         frequency: number;
         leads: number;
-        leads: number;
         videoViews3s: number;
         videoThruplays: number;
         linkClicks: number;
