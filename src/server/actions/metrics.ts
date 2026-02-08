@@ -260,7 +260,6 @@ export async function getMetaAdsMetrics(from?: string, to?: string): Promise<Das
             cpa: avgCPA,
             roas: avgROAS,
             cpm: totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0,
-            cpm: totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0,
             frequency: 1.2, // Placeholder average
             videoViews3s: totalVideoViews3s,
             videoThruplays: totalVideoThruplays,
