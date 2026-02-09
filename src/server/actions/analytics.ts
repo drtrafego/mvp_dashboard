@@ -248,9 +248,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         value: val
     }));
 
-    // Google Analytics Data Fetch (City/Region)
-    let cityData: any[] = [];
-    let regionData: any[] = [];
+
 
     // Google Analytics Data Fetch (City/Region) using OAuth Token from DB
     // This matches the pattern in sync-google.ts and uses the user's connected account.

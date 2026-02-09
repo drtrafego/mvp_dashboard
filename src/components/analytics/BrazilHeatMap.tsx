@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
 import { scaleLinear } from "d3-scale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -55,9 +55,8 @@ const normalizeRegionName = (ga4Name: string): string => {
     return "";
 };
 
-export function BrazilHeatMap({ data, className }: Props) {
-    const [tooltipContent, setTooltipContent] = useState("");
 
+export function BrazilHeatMap({ data, className }: Props) {
     // 1. Process Data Map
     const { dataMap, maxVal } = useMemo(() => {
         const map = new Map<string, number>();
