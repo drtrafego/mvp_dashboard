@@ -283,7 +283,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         value: parseInt(row.metricValues?.[0]?.value || '0', 10),
     })) : [];
 
-    const regionResponse = await analyticsDataClient.runReport({
+    const [regionResponse] = await analyticsDataClient.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
         dimensions: [{ name: 'region' }],
