@@ -268,7 +268,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
 
     const propertyId = process.env.GA4_PROPERTY_ID; // Ensure this env var exists or get from DB/Settings
 
-    const cityRegionResponse = await analyticsDataClient.runReport({
+    const [cityRegionResponse] = await analyticsDataClient.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
         dimensions: [{ name: 'city' }, { name: 'region' }],
