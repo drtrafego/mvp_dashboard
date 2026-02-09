@@ -73,29 +73,20 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
 
     // Define Date Range
     // Use UTC boundaries to match DB storage (usually 00:00:00 UTC)
-    // If 'from' is 2023-10-27, we want 2023-10-27T00:00:00.000Z
-    // If 'to' is 2023-10-27, we want 2023-10-27T23:59:59.999Z
-    // If no 'to' is provided, we want NO W (end of today UTC)
-
-    // FIX: Ensure we don't default to "start of today" for end date, we want "NOW" or "End of Today"
     const endDate = to ? new Date(`${to}T23:59:59.999Z`) : new Date();
-
-    // FIX: Default start date should be 30 days ago, not 90, to match UI default if undefined
     const startDate = from ? new Date(`${from}T00:00:00.000Z`) : subDays(new Date(), 30);
 
     console.log(`[getAnalyticsMetrics] Org: ${orgId}`);
-    console.log(`[getAnalyticsMetrics] Raw From: ${from}, Raw To: ${to}`);
     console.log(`[getAnalyticsMetrics] Query Window: ${startDate.toISOString()} TO ${endDate.toISOString()}`);
 
-    // Fetch GA4 Data
+    // Fetch GA4 Data (Campaign Metrics)
     const metrics = await biDb.select({
         date: campaignMetrics.date,
         sessions: campaignMetrics.sessions,
         users: campaignMetrics.activeUsers,
         conversions: campaignMetrics.conversions,
         campaign: campaignMetrics.campaignName,
-        // We might want source/medium if we stored them, but currently schema maps them to campaign or not at all.
-        // For now we group by campaign as "Source" proxy or just generic.
+        engagementRate: campaignMetrics.engagementRate, // Added for avg calculation
     })
         .from(campaignMetrics)
         .innerJoin(integrations, eq(campaignMetrics.integrationId, integrations.id))
@@ -113,31 +104,21 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     let totalSessions = 0;
     let totalUsers = 0;
     let totalConversions = 0;
-    let totalNewUsers = 0;
+    let totalNewUsers = 0; // Not available in current schema, defaulting to 0
     let totalPageViews = 0;
     let totalEngagementRateSum = 0;
     let engagementRateCount = 0;
 
-    // Calculate Totals from basic metrics (most reliable)
+    // Calculate Totals from basic metrics
     for (const m of metrics) {
         totalSessions += (m.sessions || 0);
         totalUsers += (m.users || 0);
         totalConversions += (m.conversions || 0);
-        // campaignMetrics might not have newUsers/pageViews depending on schema, assume 0 or proxy if needed
-        // For now, we'll try to get from dimensions or just use placeholders if schema doesn't support
-        // In this specific schema, we only selected sessions, activeUsers, conversions.
-        // Let's modify the selection to include more if possible, or calculate what we can.
+        if (m.engagementRate) {
+            totalEngagementRateSum += Number(m.engagementRate);
+            engagementRateCount++;
+        }
     }
-
-    // Since we didn't select pageViews/newUsers from campaignMetrics (might not exist in that table),
-    // we should try to sum them from dimensions if available, or just set to 0.
-    // However, looking at the schema imports, we have `campaignMetrics.activeUsers`.
-    // Let's rely on dimensions for breakdowns, but we need totals.
-
-    // Reworking calculation to be safer:
-
-    // Aggregation for Sources (using Dimensions table if avaiable or fallback to campaignMetrics)
-    // We will query analyticsDimensions for all breakdowns
 
     // Fetch Dimensions Data
     const dimData = await biDb.select()
@@ -153,11 +134,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // Maps for aggregation
     const osMap = new Map<string, number>();
     const deviceMap = new Map<string, number>();
-    const cityMap = new Map<string, number>();
-    const regionMap = new Map<string, number>();
     const pageMap = new Map<string, number>();
-    const sourceMap = new Map<string, any>();
-    const dailyMap = new Map<string, { sessions: number, users: number, conversions: number, engagementRate: number, count: number }>();
+    const sourceMap = new Map<string, { name: string; sessions: number; users: number; conversions: number }>();
 
     // Check if we have dimension data
     const hasDimensions = dimData.length > 0;
@@ -167,45 +145,27 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
             const val = row.sessions || 0;
             const usersVal = row.users || 0;
             const convVal = row.conversions || 0;
-            const engagement = 0; // row.engagementRate not in schema yet
-            const dateStr = row.date ? format(row.date, 'yyyy-MM-dd') : 'Unknown';
-
-            // Daily Aggregation
-            if (!dailyMap.has(dateStr)) {
-                dailyMap.set(dateStr, { sessions: 0, users: 0, conversions: 0, engagementRate: 0, count: 0 });
-            }
-            const d = dailyMap.get(dateStr)!;
-            // Only add to daily totals if we are iterating a specific dimension type to avoid double counting across types
-            // EXCEPT: dimensions are separate rows. We need a way to distinct daily totals.
-            // Actually, `campaignMetrics` is better for daily totals. Let's use that.
 
             if (row.dimensionType === 'OS') {
                 osMap.set(row.dimensionValue, (osMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'DEVICE') {
                 deviceMap.set(row.dimensionValue, (deviceMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'PAGE_PATH') {
-                // row.screenPageViews not in schema yet. Using sessions as proxy or 0? 
-                // Using 0 to be safe for now, as sessions per page might be misleading if we call it views.
-                // But let's use val (sessions) as a weak proxy for "visits" to at least show something.
+                // Using sessions as proxy for page views since screenPageViews is missing in schema
                 pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + val);
-                totalPageViews += val; // Proxying views with sessions for now
-            } else if (row.dimensionType === 'CITY') {
-                cityMap.set(row.dimensionValue, (cityMap.get(row.dimensionValue) || 0) + val);
-            } else if (row.dimensionType === 'REGION') {
-                regionMap.set(row.dimensionValue, (regionMap.get(row.dimensionValue) || 0) + val);
+                totalPageViews += val;
             } else if (row.dimensionType === 'SOURCE') {
-                // Use sessionSource dimension for more accurate source data than campaigns
                 if (!sourceMap.has(row.dimensionValue)) {
                     sourceMap.set(row.dimensionValue, { name: row.dimensionValue, sessions: 0, users: 0, conversions: 0 });
                 }
-                const s = sourceMap.get(row.dimensionValue);
+                const s = sourceMap.get(row.dimensionValue)!;
                 s.sessions += val;
                 s.users += usersVal;
                 s.conversions += convVal;
             }
         }
     } else {
-        // FALLBACK: If no dimensions synced yet, keep using campaign metrics for Source
+        // FALLBACK: If no dimensions synced, use campaign metrics
         for (const m of metrics) {
             const sess = m.sessions || 0;
             const usrs = m.users || 0;
@@ -215,24 +175,24 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
             if (!sourceMap.has(name)) {
                 sourceMap.set(name, { name, sessions: 0, users: 0, conversions: 0 });
             }
-            const s = sourceMap.get(name);
+            const s = sourceMap.get(name)!;
             s.sessions += sess;
             s.users += usrs;
             s.conversions += conv;
         }
     }
 
-    // Daily Data Construction from campaignMetrics (more reliable for trends)
+    // Daily Data Construction
     const dailyData = metrics.map(m => ({
         date: m.date ? format(m.date, 'yyyy-MM-dd') : 'Unknown',
         sessions: m.sessions || 0,
         users: m.users || 0,
         conversions: m.conversions || 0,
-        engagementRate: 0 // Campaign metrics might not have this, default 0
+        engagementRate: m.engagementRate ? Number(m.engagementRate) : 0
     })).sort((a, b) => a.date.localeCompare(b.date));
 
     // Calculate Averages/Rates
-    const avgEngagement = totalSessions > 0 ? (totalEngagementRateSum / totalSessions) : 0; // Simplified
+    const avgEngagement = engagementRateCount > 0 ? (totalEngagementRateSum / engagementRateCount) : 0;
 
     const sources = Array.from(sourceMap.values())
         .map(s => ({
@@ -255,15 +215,10 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // Format Device Data
     const deviceData = Array.from(deviceMap.entries())
         .sort((a, b) => b[1] - a[1])
-        .map((entry, i) => ({
+        .map((entry) => ({
             name: entry[0],
             value: entry[1]
         }));
-
-    // 6. Cities (Top 20) fetching moved to bottom with Region dimension
-
-
-    // Format Region Data (Moved to bottom with API fetch)
 
     // Format Pages
     const pages = Array.from(pageMap.entries())
@@ -274,20 +229,13 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
             views: entry[1]
         }));
 
-    // Use Totals from CampaignMetrics (more reliable for high level) or aggregate from dimensions?
-    // CampaignMetrics is safer for totals. OS/Device are subsets.
-
-    // Week Data (Mock or aggregation from daily)
-    // We can aggregate dailyMap by day of week
+    // Week Data
     const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const weekMap = new Array(7).fill(0);
 
     metrics.forEach(m => {
-        // Safe check for date
         if (m.date) {
-            const dayIndex = new Date(m.date).getDay(); // 0 = Sunday
-            // Adjust so 0 = Monday, ..., 6 = Sunday if needed, or keep standard.
-            // Let's keep standard 0=Sunday for now to match dayNames array index
+            const dayIndex = new Date(m.date).getDay();
             weekMap[dayIndex] += (m.sessions || 0);
         }
     });
@@ -296,15 +244,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         day: dayNames[i],
         value: val
     }));
-    // Rotate to start on Monday if preferred, but Sunday start is standard JS
-    // Let's reorder to Mon-Sun for business view
-    const weekDataSorted = [...weekData.slice(1), weekData[0]];
 
-    // 6. Cities (Top 20) - Enhanced to include Region if possible (simulated or fetched)
-    // GA4 API often returns separate dimensions. We'll stick to 'city' for now but could add 'region' dimension.
-    // Let's try to fetch both: city and region.
-
-    // Initialize the client
+    // Google Analytics Data Fetch (City/Region)
     const analyticsDataClient = new BetaAnalyticsDataClient({
         credentials: {
             client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -312,8 +253,9 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         },
     });
 
-    const propertyId = process.env.GA4_PROPERTY_ID; // Ensure this env var exists or get from DB/Settings
+    const propertyId = process.env.GA4_PROPERTY_ID;
 
+    // Fetch City Data
     const [cityRegionResponse] = await analyticsDataClient.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
@@ -329,6 +271,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         value: parseInt(row.metricValues?.[0]?.value || '0', 10),
     })) : [];
 
+    // Fetch Region Data
     const [regionResponse] = await analyticsDataClient.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
@@ -341,7 +284,6 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         name: row.dimensionValues?.[0]?.value || 'Unknown',
         value: parseInt(row.metricValues?.[0]?.value || '0', 10),
     })) : [];
-
 
     return {
         totals: {
@@ -358,7 +300,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         osData,
         deviceData,
         weekData,
-        cityData, // Now contains { name(city), region, value }
+        cityData,
         regionData
     };
 }
