@@ -214,14 +214,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // 6. Cities (Top 20) fetching moved to bottom with Region dimension
 
 
-    // Format Region Data
-    const regionData = Array.from(regionMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(entry => ({
-            name: entry[0],
-            value: entry[1]
-        }));
+    // Format Region Data (Moved to bottom with API fetch)
 
     // Format Pages
     const pages = Array.from(pageMap.entries())
