@@ -8,6 +8,7 @@ import { eq, and, desc, gte, lte } from "drizzle-orm";
 import { subDays, startOfDay, endOfDay, parseISO } from "date-fns";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { BetaAnalyticsDataClient } from "@google-analytics/data";
 
 // ... (types remain the same)
 export type AnalyticsMetrics = {
@@ -256,6 +257,17 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // 6. Cities (Top 20) - Enhanced to include Region if possible (simulated or fetched)
     // GA4 API often returns separate dimensions. We'll stick to 'city' for now but could add 'region' dimension.
     // Let's try to fetch both: city and region.
+
+    // Initialize the client
+    const analyticsDataClient = new BetaAnalyticsDataClient({
+        credentials: {
+            client_email: process.env.GOOGLE_CLIENT_EMAIL,
+            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        },
+    });
+
+    const propertyId = process.env.GA4_PROPERTY_ID; // Ensure this env var exists or get from DB/Settings
+
     const cityRegionResponse = await analyticsDataClient.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
