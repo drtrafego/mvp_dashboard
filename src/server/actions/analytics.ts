@@ -209,19 +209,10 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     const deviceData = Array.from(deviceMap.entries())
         .sort((a, b) => b[1] - a[1])
         .map((entry, i) => ({
-            name: entry[0],
-            value: entry[1],
-            color: deviceColors[i % deviceColors.length]
         }));
 
-    // Format City Data
-    const cityData = Array.from(cityMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(entry => ({
-            name: entry[0],
-            value: entry[1]
-        }));
+    // 6. Cities (Top 20) fetching moved to bottom with Region dimension
+
 
     // Format Region Data
     const regionData = Array.from(regionMap.entries())
