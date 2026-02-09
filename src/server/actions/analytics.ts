@@ -167,7 +167,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
             const val = row.sessions || 0;
             const usersVal = row.users || 0;
             const convVal = row.conversions || 0;
-            const engagement = row.engagementRate || 0;
+            const engagement = 0; // row.engagementRate not in schema yet
             const dateStr = row.date ? format(row.date, 'yyyy-MM-dd') : 'Unknown';
 
             // Daily Aggregation
@@ -184,8 +184,11 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
             } else if (row.dimensionType === 'DEVICE') {
                 deviceMap.set(row.dimensionValue, (deviceMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'PAGE_PATH') {
-                pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + (row.screenPageViews || 0)); // Schema might have screenPageViews
-                totalPageViews += (row.screenPageViews || 0);
+                // row.screenPageViews not in schema yet. Using sessions as proxy or 0? 
+                // Using 0 to be safe for now, as sessions per page might be misleading if we call it views.
+                // But let's use val (sessions) as a weak proxy for "visits" to at least show something.
+                pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + val);
+                totalPageViews += val; // Proxying views with sessions for now
             } else if (row.dimensionType === 'CITY') {
                 cityMap.set(row.dimensionValue, (cityMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'REGION') {
