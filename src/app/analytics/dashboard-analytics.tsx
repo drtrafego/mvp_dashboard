@@ -121,33 +121,13 @@ const KPICard = ({
     );
 };
 
-const BrazilMapMock = () => (
-    <div className="relative w-full h-full flex items-center justify-center bg-[#12141f]/50 rounded-lg">
-        {/* Placeholder for Map - Drawing SVG paths efficiently is complex for code blocks, 
-            so we'll use a stylized SVG placeholder or text if real map lib isn't available.
-            Given the constraints, a specialized SVG is best. */}
-        <svg viewBox="0 0 100 100" className="w-full h-full opacity-80 p-4">
-            <path d="M40,20 L60,20 L70,40 L60,80 L40,70 L30,50 Z" fill="#eab308" fillOpacity="0.2" stroke="#eab308" strokeWidth="0.5" />
-            <text x="50" y="50" textAnchor="middle" fill="#6b7280" fontSize="8">Mapa do Brasil</text>
-            <text x="50" y="60" textAnchor="middle" fill="#4b5563" fontSize="6">(Visualização Mock)</text>
-        </svg>
-        {/* Overlay Data Points Mock */}
-        <div className="absolute top-1/4 right-1/4 w-3 h-3 bg-yellow-500 rounded-full animate-ping opacity-75"></div>
-        <div className="absolute top-1/4 right-1/4 w-3 h-3 bg-yellow-500 rounded-full opacity-90"></div>
 
-        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-yellow-500 rounded-full opacity-60"></div>
-        {/* Gradient Bar Mock */}
-        <div className="absolute bottom-4 left-4 right-4 h-2 bg-gradient-to-r from-gray-800 via-yellow-900 to-yellow-500 rounded-full">
-            <div className="absolute -top-4 left-0 text-[8px] text-gray-500">Min</div>
-            <div className="absolute -top-4 right-0 text-[8px] text-gray-500">Max</div>
-        </div>
-    </div>
-);
 
 // --- Main Layout ---
 
 import { syncGA4 } from "@/server/actions/sync-google";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+import { BrazilGridMap } from "@/components/analytics/BrazilGridMap";
 
 // ... (existing imports)
 
@@ -277,9 +257,6 @@ export default function AnalyticsDashboard({
 
                 {/* Left: Map & Table (4 cols) */}
                 <div className="lg:col-span-4 flex flex-col gap-4">
-                    import {BrazilGridMap} from "@/components/analytics/BrazilGridMap";
-
-                    // ... (inside component)
 
                     {/* Map Card */}
                     <Card className="flex-1 min-h-[200px] relative p-0 overflow-hidden flex items-center justify-center bg-[#0f111a]">
