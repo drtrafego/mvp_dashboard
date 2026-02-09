@@ -110,6 +110,9 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
 
     console.log(`[getAnalyticsMetrics] Metrics found: ${metrics.length}`);
 
+    let totalSessions = 0;
+    let totalUsers = 0;
+    let totalConversions = 0;
     let totalNewUsers = 0;
     let totalPageViews = 0;
     let totalEngagementRateSum = 0;

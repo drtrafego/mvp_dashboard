@@ -185,6 +185,7 @@ export const leadAttribution = pgTable("lead_attribution", {
 
     // References
     leadId: uuid("lead_id").notNull(), // ID from CRM database
+    leadName: text("lead_name"), // Added to capture lead name for easier display
     campaignId: text("campaign_id").notNull(),
     adId: text("ad_id"),
     adSetId: text("ad_set_id"),
