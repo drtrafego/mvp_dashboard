@@ -127,7 +127,7 @@ const KPICard = ({
 
 import { syncGA4 } from "@/server/actions/sync-google";
 import { DatePickerWithRange } from "@/components/ui/date-range-picker";
-import { BrazilGridMap } from "@/components/analytics/BrazilGridMap";
+import { BrazilHeatMap } from "@/components/analytics/BrazilHeatMap";
 
 // ... (existing imports)
 
@@ -259,36 +259,49 @@ export default function AnalyticsDashboard({
                 <div className="lg:col-span-4 flex flex-col gap-4">
 
                     {/* Map Card */}
-                    <Card className="flex-1 min-h-[200px] relative p-0 overflow-hidden flex items-center justify-center bg-[#0f111a]">
-                        <BrazilGridMap data={regionData || []} />
+                    <Card className="flex-1 min-h-[300px] relative p-0 overflow-hidden flex items-center justify-center bg-[#0f111a] border-gray-800">
+                        <BrazilHeatMap data={regionData || []} className="p-4" />
                         <div className="absolute top-4 left-4">
                             <h3 className="text-sm font-semibold text-white">Geografia</h3>
                         </div>
                     </Card>
 
-                    {/* Region Table */}
-                    <Card className="h-[180px] !p-0 overflow-hidden">
-                        <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] flex justify-between items-center">
-                            <span className="text-xs font-bold text-gray-400 uppercase">Localização</span>
-                            <span className="text-[10px] text-gray-600">v2.0 (Live)</span>
-                            <span className="text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
+                    {/* Region Table - High Fidelity (Region | City | Accesses) */}
+                    <Card className="h-[250px] !p-0 overflow-hidden border-gray-800">
+                        <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] grid grid-cols-12 gap-2 items-center">
+                            <span className="col-span-4 text-xs font-bold text-gray-400 uppercase">Região</span>
+                            <span className="col-span-4 text-xs font-bold text-gray-400 uppercase">Cidade</span>
+                            <span className="col-span-4 text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
                         </div>
-                        <div className="overflow-y-auto h-full pb-8">
+                        <div className="overflow-y-auto h-full pb-10 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
                             {(cityData && cityData.length > 0 ? cityData : []).map((item: any, i: number) => (
-                                <div key={i} className="flex justify-between px-4 py-2 text-xs border-b border-gray-800/30 hover:bg-white/5">
-                                    <span className="text-gray-300 w-2/3 truncate">{item.name}</span>
-                                    {/* Bar visual for value */}
-                                    <div className="w-1/3 flex items-center justify-end gap-2">
-                                        <span className="text-white font-mono">{item.value}</span>
-                                        <div className="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-orange-500" style={{ width: `${(item.value / (cityData?.[0]?.value || 1)) * 100}%` }}></div>
+                                <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-800/30 hover:bg-white/5 transition-colors items-center">
+                                    {/* Region Column */}
+                                    <span className="col-span-4 text-gray-400 truncate" title={item.region || "N/A"}>
+                                        {item.region || "—"}
+                                    </span>
+
+                                    {/* City Column */}
+                                    <span className="col-span-4 text-gray-200 truncate font-medium" title={item.name}>
+                                        {item.name}
+                                    </span>
+
+                                    {/* Accesses Column + Bar */}
+                                    <div className="col-span-4 flex items-center justify-end gap-3">
+                                        <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden max-w-[60px]">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
+                                                style={{ width: `${Math.min(((item.value / (cityData?.[0]?.value || 1)) * 100), 100)}%` }}
+                                            ></div>
                                         </div>
+                                        <span className="text-white font-mono w-8 text-right">{item.value.toLocaleString()}</span>
                                     </div>
                                 </div>
                             ))}
                             {(!cityData || cityData.length === 0) && (
-                                <div className="p-4 text-center text-gray-500 text-xs mt-4">
-                                    Nenhum dado de localização encontrado para este período.
+                                <div className="p-8 text-center text-gray-500 text-xs flex flex-col items-center gap-2">
+                                    <span className="text-xl">🗺️</span>
+                                    <span>Nenhum dado geográfico disponível.</span>
                                 </div>
                             )}
                         </div>
