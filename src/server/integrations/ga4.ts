@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 
 export async function getGA4Data(accessToken: string, propertyId: string, days = 30) {
     // Standard Report for Campaign/Date (Backwards compatibility)
-    return runReport(accessToken, propertyId, days,
+    return runReport(accessToken, propertyId, days, 'today',
         [{ name: 'date' }, { name: 'campaignName' }],
         [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
     );
@@ -10,13 +10,13 @@ export async function getGA4Data(accessToken: string, propertyId: string, days =
 
 export async function getGA4Dimensions(accessToken: string, propertyId: string, days = 30, dimension: string) {
     // dimension: 'city', 'region', 'deviceCategory', 'operatingSystem', 'pagePath', 'sessionSource'
-    return runReport(accessToken, propertyId, days,
+    return runReport(accessToken, propertyId, days, 'today',
         [{ name: 'date' }, { name: dimension }],
         [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
     );
 }
 
-async function runReport(accessToken: string, propertyId: string, days: number, dimensions: any[], metrics: any[]) {
+export async function runReport(accessToken: string, propertyId: string, startDate: string | number, endDate: string | number, dimensions: any[], metrics: any[], orderBys?: any[], limit?: number) {
     const analyticsData = google.analyticsdata({
         version: 'v1beta',
         auth: asOAuth2Client(accessToken)
@@ -27,13 +27,17 @@ async function runReport(accessToken: string, propertyId: string, days: number, 
             property: `properties/${propertyId}`,
             requestBody: {
                 dateRanges: [{
-                    startDate: `${days}daysAgo`,
-                    endDate: 'today',
+                    startDate: typeof startDate === 'number' ? `${startDate}daysAgo` : startDate,
+                    endDate: typeof endDate === 'number' ? 'today' : endDate,
                 }],
                 dimensions,
-                metrics
+                metrics,
+                orderBys,
+                limit
             }
         });
+
+        // console.log("GA4 Response Rows:", response.data.rows?.length);
 
         return response.data.rows?.map(row => {
             const result: any = {};
@@ -47,9 +51,10 @@ async function runReport(accessToken: string, propertyId: string, days: number, 
             });
             return result;
         }) || [];
-    } catch (e) {
-        console.error("GA4 Report Error:", e);
-        return [];
+    } catch (e: any) {
+        console.error("GA4 Report Error:", e.message || e);
+        // Throw error so caller can handle it (essential for analytics page to show "Auth Error" if token fails)
+        throw e;
     }
 }
 
