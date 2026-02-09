@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import { BRAZIL_STATES } from "./brazil-states-data";
+import React, { useMemo, useState, useEffect } from "react";
+import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
+import { scaleLinear } from "d3-scale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Brazil TopoJSON URL (Proved/Standard)
+const BRAZIL_TOPO_JSON = "https://gist.githubusercontent.com/ruliana/1ccaaab05ea113b0dff3b22be3b4d637/raw/196c0332d38cb935cfca227d28f7cecfa70b412e/br-states.json";
 
 type RegionData = {
     name: string;
@@ -14,7 +18,9 @@ type Props = {
     className?: string;
 };
 
-// Start of Day normalization mapping (GA4 English -> PT-BR/Internal ID)
+// Normalization: GA4 Name -> TopoJSON ID (Usually 2-letter code or matching name)
+// The TopoJSON from the URL likely uses IDs like "BR-SP" or just "SP" or full names.
+// We will inspect properties in the render, but standard mapping usually works.
 const normalizeRegionName = (ga4Name: string): string => {
     const n = ga4Name.toLowerCase();
     if (n.includes("sao paulo") || n.includes("são paulo")) return "SP";
@@ -50,88 +56,97 @@ const normalizeRegionName = (ga4Name: string): string => {
 };
 
 export function BrazilHeatMap({ data, className }: Props) {
+    const [tooltipContent, setTooltipContent] = useState("");
+
     // 1. Process Data Map
-    const dataMap = useMemo(() => {
+    const { dataMap, maxVal } = useMemo(() => {
         const map = new Map<string, number>();
-        let maxVal = 0;
+        let max = 0;
 
         data.forEach(item => {
             const id = normalizeRegionName(item.name);
             if (id) {
                 const current = map.get(id) || 0;
                 map.set(id, current + item.value);
-                if ((current + item.value) > maxVal) maxVal = current + item.value;
+                if ((current + item.value) > max) max = current + item.value;
             }
         });
 
-        return { map, max: maxVal > 0 ? maxVal : 1 };
+        return { dataMap: map, maxVal: max > 0 ? max : 1 };
     }, [data]);
 
-    // 2. Color Scale Function (Orange/Gold theme)
-    const getColor = (id: string) => {
-        const value = dataMap.map.get(id) || 0;
-        const intensity = value / dataMap.max;
-
-        // Base color: #f59e0b (Amber-500) -> rgb(245, 158, 11)
-        // Lightest: #fffbeb (Amber-50) -> rgb(255, 251, 235)
-
-        if (value === 0) return "#f3f4f6"; // Gray-100 for no data
-
-        // Simple opacity based interpolation for "Heat" style
-        // Or distinct steps
-        if (intensity > 0.8) return "#b45309"; // Amber-700
-        if (intensity > 0.6) return "#d97706"; // Amber-600
-        if (intensity > 0.4) return "#f59e0b"; // Amber-500
-        if (intensity > 0.2) return "#fbbf24"; // Amber-400
-        return "#fcd34d"; // Amber-300
-    };
+    // 2. Color Scale
+    // Amber Scale: #fffbeb (0) -> #b45309 (Max)
+    const colorScale = scaleLinear<string>()
+        .domain([0, maxVal])
+        .range(["#27272a", "#f59e0b"]); // Dark Gray (Empty) -> Amber (Full)
 
     return (
-        <div className={`w-full h-full flex items-center justify-center ${className}`}>
-            <TooltipProvider>
-                <svg
-                    viewBox="100 0 500 500" // Adjusted viewbox for Brazil shape
-                    className="w-full h-full max-h-[400px]"
-                    style={{ filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.1))" }}
-                >
-                    {BRAZIL_STATES.map((state) => {
-                        const value = dataMap.map.get(state.id) || 0;
-                        return (
-                            <Tooltip key={state.id}>
-                                <TooltipTrigger asChild>
-                                    <path
-                                        d={state.path}
-                                        fill={getColor(state.id)}
-                                        stroke="#ffffff"
-                                        strokeWidth="0.5"
-                                        className="transition-all duration-200 hover:opacity-80 cursor-pointer hover:stroke-gray-400"
-                                        style={{ outline: "none" }}
-                                    />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <div className="flex flex-col gap-1">
-                                        <span className="font-bold">{state.name}</span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {value} acessos
-                                        </span>
-                                    </div>
-                                </TooltipContent>
-                            </Tooltip>
-                        );
-                    })}
-                </svg>
-            </TooltipProvider>
+        <div className={`w-full h-full flex items-center justify-center relative ${className}`}>
+            <ComposableMap
+                projection="geoMercator"
+                projectionConfig={{
+                    scale: 600,
+                    center: [-54, -15] // Center over Brazil
+                }}
+                className="w-full h-full max-h-[400px]"
+                style={{ width: "100%", height: "100%" }}
+            >
+                <ZoomableGroup center={[-54, -15]} zoom={1} minZoom={1} maxZoom={4} translateExtent={[[-180, -90], [180, 90]]}>
+                    <Geographies geography={BRAZIL_TOPO_JSON}>
+                        {({ geographies }) =>
+                            geographies.map((geo) => {
+                                // The TopoJSON 'id' for Brazil states usually matches the 2-letter code (e.g. "BR-SP" or "SP" or based on properties)
+                                // Let's inspect properties in case 'id' is ISO numeric.
+                                // The Gist `br-states.json` usually has `id` as "SP", "RJ", etc directly.
+                                const geoId = geo.id as string;
+                                const value = dataMap.get(geoId) || 0;
+                                const hasData = dataMap.has(geoId);
 
-            {/* Gradient Legend Overlay */}
+                                return (
+                                    <TooltipProvider key={geo.rsmKey}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Geography
+                                                    geography={geo}
+                                                    fill={hasData ? colorScale(value) : "#27272a"}
+                                                    stroke="#18181b" // Darker border
+                                                    strokeWidth={0.5}
+                                                    style={{
+                                                        default: { outline: "none" },
+                                                        hover: { fill: "#fbbf24", outline: "none", cursor: "pointer" }, // Hover highlight
+                                                        pressed: { outline: "none" },
+                                                    }}
+                                                />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="font-bold">{geo.properties?.name || geoId}</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {value} acessos
+                                                    </span>
+                                                </div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                );
+                            })
+                        }
+                    </Geographies>
+                </ZoomableGroup>
+            </ComposableMap>
+
+            {/* Legend */}
             <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between pointer-events-none">
                 <div className="bg-white/80 dark:bg-black/50 backdrop-blur px-2 py-1 rounded text-[10px] font-mono text-gray-500">
-                    1
+                    0
                 </div>
-                <div className="h-1.5 flex-1 mx-2 bg-gradient-to-r from-amber-100 via-amber-400 to-amber-800 rounded-full opacity-80" />
+                <div className="h-1.5 flex-1 mx-2 bg-gradient-to-r from-[#27272a] to-[#f59e0b] rounded-full opacity-80" />
                 <div className="bg-white/80 dark:bg-black/50 backdrop-blur px-2 py-1 rounded text-[10px] font-mono text-gray-500">
-                    {dataMap.max.toLocaleString()}
+                    {maxVal.toLocaleString()}
                 </div>
             </div>
         </div>
     );
 }
+
