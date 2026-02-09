@@ -158,7 +158,6 @@ export default function AnalyticsDashboard({
     osData,
     deviceData,
     weekData,
-    weekData,
     cityData,
     regionData
 }: AnalyticsDashboardProps) {
