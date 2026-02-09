@@ -178,7 +178,9 @@ export default function AnalyticsDashboard({
                             <h1 className="text-2xl font-bold tracking-tight text-white">Analytics</h1>
                         </div>
                         <div className="mt-1">
-                            <DatePickerWithRange />
+                            {/* DatePicker removed - now in Global Header */}
+                            {/* <DatePickerWithRange /> */}
+                            <p className="text-sm text-gray-500">Visão geral do tráfego e engajamento.</p>
                         </div>
                     </div>
                 </div>

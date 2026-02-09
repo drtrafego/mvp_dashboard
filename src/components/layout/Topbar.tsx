@@ -1,6 +1,7 @@
 "use client";
 
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
+// import { DatePickerWithRange } from "@/components/ui/date-range-picker"; // Replaced
+import DateRangeHeader from "@/components/layout/DateRangeHeader";
 // import { ModeToggle } from "@/components/ui/theme-toggle"; // Removed per request
 import { handleSignOut } from "@/server/actions/auth-actions";
 
@@ -35,8 +36,13 @@ export default function Topbar({ userName, userImage, onMenuClick }: Props) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
+            </div>
 
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 hidden sm:block">Dashboard</h2>
+            {/* Central Date Picker (Hidden on mobile usually or full width, let's center it or put it right for now? User said "Header") */}
+            {/* The user wants it "acima do site como se fosse o cabeçalho" (above the site like a header). */}
+            {/* Placing it in the center of the Topbar is a good spot for "Global Header Control" */}
+            <div className="flex-1 flex justify-center">
+                {showDatePicker && <DateRangeHeader />}
             </div>
 
             <div className="flex items-center gap-4">
@@ -56,7 +62,7 @@ export default function Topbar({ userName, userImage, onMenuClick }: Props) {
                             className="w-8 h-8 rounded-full border border-gray-200"
                         />
                     )}
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{userName}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline">{userName}</span>
                     <form action={handleSignOut}>
                         <button
                             type="submit"
