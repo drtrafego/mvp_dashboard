@@ -28,8 +28,10 @@ export type AnalyticsMetrics = {
     }[];
     sources: {
         name: string;
-        value: number;
-        color: string;
+        sessions: number;
+        users: number;
+        conversions: number;
+        percentage: number;
     }[];
     pages: {
         path: string;
