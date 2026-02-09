@@ -1,0 +1,24 @@
+# Agent Brain Architecture (OpenClaw-Style)
+
+## Structure Overview
+
+This directory mimics the modular "Brain" architecture of advanced AI systems like OpenClaw. It separates core reasoning from specialized capabilities, allowing for context-aware activation of "Lobes".
+
+### Components
+
+* **Core (Gateway)**: `core/operational_guidelines.md`
+  * Acts as the central router and "consciousness". Defines how to process requests and which lobe to activate.
+* **Capabilities (Lobes)**: `capabilities/*.md`
+  * **Frontend Architect**: Specialized in UI/UX and client-side logic.
+  * **Backend Architect**: Specialized in Server/API/DB logic.
+  * **DevOps Architect**: Specialized in Infra/CI/CD logic.
+
+### Usage Protocol
+
+When a complex task arrives:
+
+1. **Assess**: Read `core/operational_guidelines.md` to ground reasoning.
+2. **Activate**: Load the relevant `capabilities/*.md` file into context.
+3. **Execute**: Perform the task using the retrieved specialized constraints and patterns.
+
+This structure allows the Agent to simulate "shifting gears" between deep reasoning modes, enhancing focus and output quality.
