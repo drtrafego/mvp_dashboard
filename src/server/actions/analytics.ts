@@ -246,44 +246,70 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     }));
 
     // Google Analytics Data Fetch (City/Region)
-    const analyticsDataClient = new BetaAnalyticsDataClient({
-        credentials: {
-            client_email: process.env.GOOGLE_CLIENT_EMAIL,
-            private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        },
-    });
+    let cityData: any[] = [];
+    let regionData: any[] = [];
 
-    const propertyId = process.env.GA4_PROPERTY_ID;
+    // Check for credentials before attempting to initialize client
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+        console.warn("[getAnalyticsMetrics] Missing GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY. Skipping City/Region fetch.");
+        // We do not throw here to allow the rest of the dashboard (totals, daily) to load even if map credentials are missing.
+        // The UI will show empty states for map/table.
+    } else {
+        try {
+            const analyticsDataClient = new BetaAnalyticsDataClient({
+                credentials: {
+                    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                    private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+                },
+            });
 
-    // Fetch City Data
-    const [cityRegionResponse] = await analyticsDataClient.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
-        dimensions: [{ name: 'city' }, { name: 'region' }],
-        metrics: [{ name: 'sessions' }],
-        limit: 20,
-        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
-    });
+            const propertyId = process.env.GA4_PROPERTY_ID;
 
-    const cityData = cityRegionResponse.rows ? cityRegionResponse.rows.map(row => ({
-        name: row.dimensionValues?.[0]?.value || 'Unknown',
-        region: row.dimensionValues?.[1]?.value || '',
-        value: parseInt(row.metricValues?.[0]?.value || '0', 10),
-    })) : [];
+            if (propertyId) {
+                // Fetch City Data
+                const [cityRegionResponse] = await analyticsDataClient.runReport({
+                    property: `properties/${propertyId}`,
+                    dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
+                    dimensions: [{ name: 'city' }, { name: 'region' }],
+                    metrics: [{ name: 'sessions' }],
+                    limit: 20,
+                    orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+                });
 
-    // Fetch Region Data
-    const [regionResponse] = await analyticsDataClient.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
-        dimensions: [{ name: 'region' }],
-        metrics: [{ name: 'sessions' }],
-        limit: 27, // All BR states
-    });
+                cityData = cityRegionResponse.rows ? cityRegionResponse.rows.map(row => ({
+                    name: row.dimensionValues?.[0]?.value || 'Unknown',
+                    region: row.dimensionValues?.[1]?.value || '',
+                    value: parseInt(row.metricValues?.[0]?.value || '0', 10),
+                })) : [];
 
-    const regionData = regionResponse.rows ? regionResponse.rows.map(row => ({
-        name: row.dimensionValues?.[0]?.value || 'Unknown',
-        value: parseInt(row.metricValues?.[0]?.value || '0', 10),
-    })) : [];
+                // Fetch Region Data
+                const [regionResponse] = await analyticsDataClient.runReport({
+                    property: `properties/${propertyId}`,
+                    dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
+                    dimensions: [{ name: 'region' }],
+                    metrics: [{ name: 'sessions' }],
+                    limit: 27, // All BR states
+                });
+
+                regionData = regionResponse.rows ? regionResponse.rows.map(row => ({
+                    name: row.dimensionValues?.[0]?.value || 'Unknown',
+                    value: parseInt(row.metricValues?.[0]?.value || '0', 10),
+                })) : [];
+            } else {
+                console.warn("[getAnalyticsMetrics] Missing GA4_PROPERTY_ID. Skipping City/Region fetch.");
+            }
+
+        } catch (err: any) {
+            console.error("[getAnalyticsMetrics] Error fetching geo data:", err.message);
+            // Again, suppress error to catch it in the UI only if critical, or allow partial load.
+            // If we want to show the specific error "incoming JSON..." let's throw it if it's critical,
+            // OR arguably, we should just let the main try/catch in the Page component handle it if we want the user to see it.
+            // BUT, the user saw "incoming JSON..." which blocked everything.
+            // Let's THROW if it fails so the UI shows the red error box we just built, 
+            // ensuring the user knows WHY it failed (credentials).
+            throw new Error(`Google Analytics API Error: ${err.message}`);
+        }
+    }
 
     return {
         totals: {
