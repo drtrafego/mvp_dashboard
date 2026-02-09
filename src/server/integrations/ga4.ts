@@ -2,7 +2,12 @@ import { google } from 'googleapis';
 
 export async function getGA4Data(accessToken: string, propertyId: string, days = 30) {
     // Standard Report for Campaign/Date (Backwards compatibility)
-    return runReport(accessToken, propertyId, days, 'today',
+    // Adapts the old 3-arg call to new 4+ arg signature
+    return runReport(
+        accessToken,
+        propertyId,
+        days,
+        'today',
         [{ name: 'date' }, { name: 'campaignName' }],
         [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
     );
@@ -10,13 +15,29 @@ export async function getGA4Data(accessToken: string, propertyId: string, days =
 
 export async function getGA4Dimensions(accessToken: string, propertyId: string, days = 30, dimension: string) {
     // dimension: 'city', 'region', 'deviceCategory', 'operatingSystem', 'pagePath', 'sessionSource'
-    return runReport(accessToken, propertyId, days, 'today',
+    return runReport(
+        accessToken,
+        propertyId,
+        days,
+        'today',
         [{ name: 'date' }, { name: dimension }],
         [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
     );
 }
 
-export async function runReport(accessToken: string, propertyId: string, startDate: string | number, endDate: string | number, dimensions: any[], metrics: any[], orderBys?: any[], limit?: number) {
+/**
+ * Universal helper to run GA4 reports with OAuth
+ */
+export async function runReport(
+    accessToken: string,
+    propertyId: string,
+    startDate: string | number,
+    endDate: string | number,
+    dimensions: any[],
+    metrics: any[],
+    orderBys?: any[],
+    limit?: number
+) {
     const analyticsData = google.analyticsdata({
         version: 'v1beta',
         auth: asOAuth2Client(accessToken)
@@ -27,8 +48,8 @@ export async function runReport(accessToken: string, propertyId: string, startDa
             property: `properties/${propertyId}`,
             requestBody: {
                 dateRanges: [{
-                    startDate: typeof startDate === 'number' ? `${startDate}daysAgo` : startDate,
-                    endDate: typeof endDate === 'number' ? 'today' : endDate,
+                    startDate: typeof startDate === 'number' ? `${startDate}daysAgo` : String(startDate),
+                    endDate: typeof endDate === 'number' ? 'today' : String(endDate),
                 }],
                 dimensions,
                 metrics,
@@ -39,7 +60,7 @@ export async function runReport(accessToken: string, propertyId: string, startDa
 
         // console.log("GA4 Response Rows:", response.data.rows?.length);
 
-        return response.data.rows?.map(row => {
+        return response.data.rows?.map((row: any) => {
             const result: any = {};
             // Map dimensions
             dimensions.forEach((dim, index) => {
