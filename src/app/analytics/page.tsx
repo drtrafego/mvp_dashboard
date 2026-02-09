@@ -21,11 +21,13 @@ export default async function AnalyticsPage(props: { searchParams: SearchParams 
 
     // We fetch data if connected
     let metrics = null;
+    let error = null;
     if (isConnected) {
         try {
             metrics = await getAnalyticsMetrics(from, to);
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to fetch analytics", e);
+            error = e.message || "Unknown error";
         }
     }
 
@@ -58,9 +60,25 @@ export default async function AnalyticsPage(props: { searchParams: SearchParams 
                         deviceData={metrics.deviceData}
                         weekData={metrics.weekData}
                         cityData={metrics.cityData}
+                        regionData={metrics.regionData}
                     />
                 ) : (
-                    <div className="p-8 text-white">Carregando dados...</div>
+                    <div className="p-8 text-white flex flex-col items-center justify-center h-screen gap-4">
+                        {error ? (
+                            <>
+                                <div className="text-red-500 text-xl font-bold">Erro ao carregar dados</div>
+                                <div className="text-gray-400 font-mono bg-black/50 p-4 rounded border border-red-900/50">
+                                    {error}
+                                </div>
+                                <p className="text-sm text-gray-500">Verifique os logs do servidor para mais detalhes.</p>
+                            </>
+                        ) : (
+                            <>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                                <div>Carregando dados...</div>
+                            </>
+                        )}
+                    </div>
                 )
             )}
         </div>
