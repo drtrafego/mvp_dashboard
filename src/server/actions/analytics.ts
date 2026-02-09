@@ -19,14 +19,43 @@ export type AnalyticsMetrics = {
         engagementRate: number;
         conversions: number;
     };
-    daily: any[];
-    sources: any[];
-    pages: any[];
-    osData: any[];
-    deviceData: any[];
-    weekData: any[];
-    cityData: any[];
-    regionData: any[];
+    daily: {
+        date: string;
+        sessions: number;
+        users: number;
+        conversions: number;
+        engagementRate: number;
+    }[];
+    sources: {
+        name: string;
+        value: number;
+        color: string;
+    }[];
+    pages: {
+        path: string;
+        views: number;
+    }[];
+    osData: {
+        name: string;
+        value: number;
+    }[];
+    deviceData: {
+        name: string;
+        value: number;
+    }[];
+    weekData: {
+        day: string;
+        value: number;
+    }[];
+    cityData: {
+        name: string;
+        region?: string;
+        value: number;
+    }[];
+    regionData: {
+        name: string;
+        value: number;
+    }[];
 };
 
 export async function getAnalyticsMetrics(from?: string, to?: string): Promise<AnalyticsMetrics> {
@@ -238,42 +267,54 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // Let's reorder to Mon-Sun for business view
     const weekDataSorted = [...weekData.slice(1), weekData[0]];
 
-    // Daily Map for Sparklines
-    const dailyMap = new Map<string, any>();
-    for (const m of metrics) {
-        const dateStr = new Date(m.date).toISOString().split('T')[0];
-        if (!dailyMap.has(dateStr)) {
-            dailyMap.set(dateStr, {
-                date: dateStr,
-                sessions: 0,
-                users: 0,
-                conversions: 0,
-                engagementRate: 0
-            });
-        }
-        const d = dailyMap.get(dateStr);
-        d.sessions += (m.sessions || 0);
-        d.users += (m.users || 0);
-        d.conversions += (m.conversions || 0);
-    }
-    const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    // 6. Cities (Top 20) - Enhanced to include Region if possible (simulated or fetched)
+    // GA4 API often returns separate dimensions. We'll stick to 'city' for now but could add 'region' dimension.
+    // Let's try to fetch both: city and region.
+    const cityRegionResponse = await analyticsDataClient.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
+        dimensions: [{ name: 'city' }, { name: 'region' }],
+        metrics: [{ name: 'sessions' }],
+        limit: 20,
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+    });
+
+    const cityData = cityRegionResponse.rows ? cityRegionResponse.rows.map(row => ({
+        name: row.dimensionValues?.[0]?.value || 'Unknown',
+        region: row.dimensionValues?.[1]?.value || '',
+        value: parseInt(row.metricValues?.[0]?.value || '0', 10),
+    })) : [];
+
+    const regionResponse = await analyticsDataClient.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate: from || '30daysAgo', endDate: to || 'today' }],
+        dimensions: [{ name: 'region' }],
+        metrics: [{ name: 'sessions' }],
+        limit: 27, // All BR states
+    });
+
+    const regionData = regionResponse.rows ? regionResponse.rows.map(row => ({
+        name: row.dimensionValues?.[0]?.value || 'Unknown',
+        value: parseInt(row.metricValues?.[0]?.value || '0', 10),
+    })) : [];
+
 
     return {
         totals: {
             sessions: totalSessions,
             users: totalUsers,
-            newUsers: Math.round(totalUsers * 0.8), // Est.
+            newUsers: totalNewUsers,
+            pageViews: totalPageViews,
+            engagementRate: avgEngagement,
             conversions: totalConversions,
-            pageViews: Math.round(totalSessions * 1.5), // Est.
-            engagementRate: 28.34, // Mock
         },
-        sources,
-        daily,
+        daily: dailyData,
+        sources: sourceData,
+        pages: pageData,
         osData,
         deviceData,
         weekData,
-        pages,
-        cityData,
+        cityData, // Now contains { name(city), region, value }
         regionData
     };
 }
