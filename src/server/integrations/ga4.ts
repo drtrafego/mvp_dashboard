@@ -54,7 +54,7 @@ export async function runReport(
                 dimensions,
                 metrics,
                 orderBys,
-                limit
+                limit: limit as any // Explicit cast to fix TS overload mismatch
             }
         });
 
