@@ -52,6 +52,7 @@ type AnalyticsDashboardProps = {
     deviceData: DimensionData[];
     weekData: { day: string; value: number }[];
     cityData?: DimensionData[];
+    regionData?: DimensionData[];
 };
 
 // --- Components ---
