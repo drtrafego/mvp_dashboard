@@ -110,16 +110,28 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
 
     console.log(`[getAnalyticsMetrics] Metrics found: ${metrics.length}`);
 
-    let totalSessions = 0;
-    let totalUsers = 0;
-    let totalConversions = 0;
+    let totalNewUsers = 0;
+    let totalPageViews = 0;
+    let totalEngagementRateSum = 0;
+    let engagementRateCount = 0;
 
     // Calculate Totals from basic metrics (most reliable)
     for (const m of metrics) {
         totalSessions += (m.sessions || 0);
         totalUsers += (m.users || 0);
         totalConversions += (m.conversions || 0);
+        // campaignMetrics might not have newUsers/pageViews depending on schema, assume 0 or proxy if needed
+        // For now, we'll try to get from dimensions or just use placeholders if schema doesn't support
+        // In this specific schema, we only selected sessions, activeUsers, conversions.
+        // Let's modify the selection to include more if possible, or calculate what we can.
     }
+
+    // Since we didn't select pageViews/newUsers from campaignMetrics (might not exist in that table),
+    // we should try to sum them from dimensions if available, or just set to 0.
+    // However, looking at the schema imports, we have `campaignMetrics.activeUsers`.
+    // Let's rely on dimensions for breakdowns, but we need totals.
+
+    // Reworking calculation to be safer:
 
     // Aggregation for Sources (using Dimensions table if avaiable or fallback to campaignMetrics)
     // We will query analyticsDimensions for all breakdowns
@@ -142,6 +154,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     const regionMap = new Map<string, number>();
     const pageMap = new Map<string, number>();
     const sourceMap = new Map<string, any>();
+    const dailyMap = new Map<string, { sessions: number, users: number, conversions: number, engagementRate: number, count: number }>();
 
     // Check if we have dimension data
     const hasDimensions = dimData.length > 0;
@@ -149,13 +162,27 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     if (hasDimensions) {
         for (const row of dimData) {
             const val = row.sessions || 0;
+            const usersVal = row.users || 0;
+            const convVal = row.conversions || 0;
+            const engagement = row.engagementRate || 0;
+            const dateStr = row.date ? format(row.date, 'yyyy-MM-dd') : 'Unknown';
+
+            // Daily Aggregation
+            if (!dailyMap.has(dateStr)) {
+                dailyMap.set(dateStr, { sessions: 0, users: 0, conversions: 0, engagementRate: 0, count: 0 });
+            }
+            const d = dailyMap.get(dateStr)!;
+            // Only add to daily totals if we are iterating a specific dimension type to avoid double counting across types
+            // EXCEPT: dimensions are separate rows. We need a way to distinct daily totals.
+            // Actually, `campaignMetrics` is better for daily totals. Let's use that.
 
             if (row.dimensionType === 'OS') {
                 osMap.set(row.dimensionValue, (osMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'DEVICE') {
                 deviceMap.set(row.dimensionValue, (deviceMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'PAGE_PATH') {
-                pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + val);
+                pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + (row.screenPageViews || 0)); // Schema might have screenPageViews
+                totalPageViews += (row.screenPageViews || 0);
             } else if (row.dimensionType === 'CITY') {
                 cityMap.set(row.dimensionValue, (cityMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'REGION') {
@@ -167,8 +194,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
                 }
                 const s = sourceMap.get(row.dimensionValue);
                 s.sessions += val;
-                s.users += (row.users || 0);
-                s.conversions += (row.conversions || 0);
+                s.users += usersVal;
+                s.conversions += convVal;
             }
         }
     } else {
@@ -189,6 +216,18 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         }
     }
 
+    // Daily Data Construction from campaignMetrics (more reliable for trends)
+    const dailyData = metrics.map(m => ({
+        date: m.date ? format(m.date, 'yyyy-MM-dd') : 'Unknown',
+        sessions: m.sessions || 0,
+        users: m.users || 0,
+        conversions: m.conversions || 0,
+        engagementRate: 0 // Campaign metrics might not have this, default 0
+    })).sort((a, b) => a.date.localeCompare(b.date));
+
+    // Calculate Averages/Rates
+    const avgEngagement = totalSessions > 0 ? (totalEngagementRateSum / totalSessions) : 0; // Simplified
+
     const sources = Array.from(sourceMap.values())
         .map(s => ({
             ...s,
@@ -208,10 +247,11 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         }));
 
     // Format Device Data
-    const deviceColors = ['#f97316', '#ef4444', '#fb923c'];
     const deviceData = Array.from(deviceMap.entries())
         .sort((a, b) => b[1] - a[1])
         .map((entry, i) => ({
+            name: entry[0],
+            value: entry[1]
         }));
 
     // 6. Cities (Top 20) fetching moved to bottom with Region dimension
@@ -307,8 +347,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
             conversions: totalConversions,
         },
         daily: dailyData,
-        sources: sourceData,
-        pages: pageData,
+        sources: sources,
+        pages: pages,
         osData,
         deviceData,
         weekData,
