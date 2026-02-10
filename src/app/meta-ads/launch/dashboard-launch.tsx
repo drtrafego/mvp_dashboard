@@ -236,7 +236,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                                     cursor={{ fill: 'transparent' }}
                                     contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
                                     labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
-                                    formatter={(value: number) => [`R$ ${value.toFixed(2)}`, "Investimento"]}
+                                    formatter={(value: number | undefined) => [`R$ ${(value || 0).toFixed(2)}`, "Investimento"]}
                                 />
                                 <Bar dataKey="investment" name="Investimento" fill="#22c55e" radius={[4, 4, 0, 0]} barSize={30} />
                             </BarChart>
