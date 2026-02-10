@@ -144,6 +144,29 @@ export default function AnalyticsDashboard({
     cityData,
     regionData
 }: AnalyticsDashboardProps) {
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSync = async () => {
+        setIsSyncing(true);
+        try {
+            const result = await syncGA4();
+            if (result.success) {
+                alert(`Sucesso: ${result.message}`);
+                window.location.reload();
+            } else {
+                alert(`Erro: ${result.error}`);
+            }
+        } catch (error) {
+            alert("Erro na chamada de sincronização.");
+            console.error(error);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // Safety check for empty daily charts
+    const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], sessions: 0, users: 0, conversions: 0, engagementRate: 0 }];
+
     // Sort data for charts (Legends ordered by value desc)
     const sortedOsData = [...osData].sort((a, b) => b.value - a.value);
     const sortedDeviceData = [...deviceData].sort((a, b) => b.value - a.value);
@@ -374,7 +397,7 @@ export default function AnalyticsDashboard({
                     <h3 className="text-sm font-semibold text-white mb-4">Sistema Operacional</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={osData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                            <BarChart layout="vertical" data={sortedOsData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
                                 <XAxis type="number" hide />
                                 <YAxis
                                     dataKey="name"
@@ -399,7 +422,7 @@ export default function AnalyticsDashboard({
                     <h3 className="text-sm font-semibold text-white mb-4">Navegador</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={browserData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                            <BarChart layout="vertical" data={sortedBrowserData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
                                 <XAxis type="number" hide />
                                 <YAxis
                                     dataKey="name"
@@ -426,7 +449,7 @@ export default function AnalyticsDashboard({
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={deviceData}
+                                    data={sortedDeviceData}
                                     dataKey="value"
                                     nameKey="name"
                                     cx="50%"
@@ -436,7 +459,7 @@ export default function AnalyticsDashboard({
                                     paddingAngle={2}
                                     stroke="none"
                                 >
-                                    {deviceData.map((entry, index) => (
+                                    {sortedDeviceData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color || ['#ec4899', '#3b82f6', '#8b5cf6'][index % 3]} />
                                     ))}
                                 </Pie>
