@@ -221,6 +221,7 @@ export async function syncGA4() {
                 { type: 'REGION', apiDim: 'region' },
                 { type: 'DEVICE', apiDim: 'deviceCategory' },
                 { type: 'OS', apiDim: 'operatingSystem' },
+                { type: 'BROWSER', apiDim: 'browser' },
                 { type: 'PAGE_PATH', apiDim: 'pagePath' },
                 { type: 'SOURCE', apiDim: 'sessionSource' }
             ];

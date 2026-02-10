@@ -49,6 +49,10 @@ export type AnalyticsMetrics = {
         name: string;
         value: number;
     }[];
+    browserData: {
+        name: string;
+        value: number;
+    }[];
     weekData: {
         day: string;
         value: number;
@@ -137,6 +141,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // Maps for aggregation
     const osMap = new Map<string, number>();
     const deviceMap = new Map<string, number>();
+    const browserMap = new Map<string, number>();
     const pageMap = new Map<string, number>();
     const sourceMap = new Map<string, { name: string; sessions: number; users: number; conversions: number }>();
 
@@ -153,6 +158,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
                 osMap.set(row.dimensionValue, (osMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'DEVICE') {
                 deviceMap.set(row.dimensionValue, (deviceMap.get(row.dimensionValue) || 0) + val);
+            } else if (row.dimensionType === 'BROWSER') {
+                browserMap.set(row.dimensionValue, (browserMap.get(row.dimensionValue) || 0) + val);
             } else if (row.dimensionType === 'PAGE_PATH') {
                 // Using sessions as proxy for page views since screenPageViews is missing in schema
                 pageMap.set(row.dimensionValue, (pageMap.get(row.dimensionValue) || 0) + val);
@@ -218,6 +225,15 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // Format Device Data
     const deviceData = Array.from(deviceMap.entries())
         .sort((a, b) => b[1] - a[1])
+        .map((entry) => ({
+            name: entry[0],
+            value: entry[1]
+        }));
+
+    // Format Browser Data
+    const browserData = Array.from(browserMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
         .map((entry) => ({
             name: entry[0],
             value: entry[1]
@@ -340,6 +356,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         pages: pages,
         osData,
         deviceData,
+        browserData,
         weekData,
         cityData,
         regionData
