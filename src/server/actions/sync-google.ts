@@ -197,8 +197,10 @@ export async function syncGA4() {
                     date: parsedDate,
                     campaignName: item.campaign === '(not set)' ? 'Direto/Orgânico' : item.campaign,
                     sessions: Math.round(Number(item.sessions || 0)),
-                    activeUsers: Math.round(Number(item.users || 0)),
+                    activeUsers: Math.round(Number(item.totalUsers || 0)),
+                    newUsers: Math.round(Number(item.newUsers || 0)),
                     conversions: Math.round(Number(item.conversions || 0)),
+                    engagementRate: String(item.engagementRate || 0),
                 };
             });
 

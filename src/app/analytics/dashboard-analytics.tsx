@@ -51,6 +51,7 @@ type AnalyticsDashboardProps = {
     pages: AnalyticsPageData[];
     osData: DimensionData[];
     deviceData: DimensionData[];
+    browserData: DimensionData[];
     weekData: { day: string; value: number }[];
     cityData?: DimensionData[];
     regionData?: DimensionData[];
@@ -138,6 +139,7 @@ export default function AnalyticsDashboard({
     pages,
     osData,
     deviceData,
+    browserData,
     weekData,
     cityData,
     regionData
@@ -382,47 +384,55 @@ export default function AnalyticsDashboard({
                 </div>
             </div>
 
-            {/* Bottom Row: OS | Device | URL */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Bottom Row: OS | Browser | Device | URL */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                {/* OS Donut */}
+                {/* OS Horizontal Bar */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-2">Sistema Operacional</h3>
-                    <div className="flex-1 flex items-center justify-center">
+                    <h3 className="text-sm font-semibold text-white mb-4">Sistema Operacional</h3>
+                    <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={osData}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius="55%"
-                                    outerRadius="85%"
-                                    paddingAngle={2}
-                                    stroke="none"
-                                >
-                                    {osData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
+                            <BarChart layout="vertical" data={osData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                                <XAxis type="number" hide />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    width={100}
+                                    tick={{ fill: '#9ca3af', fontSize: 11 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
-                                    itemStyle={{ color: '#fff' }}
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
                                 />
-                                <Legend
-                                    layout="vertical"
-                                    verticalAlign="middle"
-                                    align="right"
-                                    iconSize={10}
-                                    wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
-                                    formatter={(value, entry: any) => (
-                                        <span className="text-gray-300 ml-1">
-                                            {value} <span className="text-gray-500">({entry.payload.value.toLocaleString()})</span>
-                                        </span>
-                                    )}
+                                <Bar dataKey="value" name="Usuários" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </Card>
+
+                {/* Browser Horizontal Bar */}
+                <Card className="flex flex-col min-h-[350px]">
+                    <h3 className="text-sm font-semibold text-white mb-4">Navegador</h3>
+                    <div className="flex-1 w-full min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart layout="vertical" data={browserData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                                <XAxis type="number" hide />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    width={100}
+                                    tick={{ fill: '#9ca3af', fontSize: 11 }}
+                                    axisLine={false}
+                                    tickLine={false}
                                 />
-                            </PieChart>
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
+                                />
+                                <Bar dataKey="value" name="Usuários" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} />
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
@@ -445,7 +455,7 @@ export default function AnalyticsDashboard({
                                     stroke="none"
                                 >
                                     {deviceData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color || ['#3b82f6', '#8b5cf6', '#ec4899'][index % 3]} />
+                                        <Cell key={`cell-${index}`} fill={entry.color || ['#ec4899', '#3b82f6', '#8b5cf6'][index % 3]} />
                                     ))}
                                 </Pie>
                                 <Tooltip
