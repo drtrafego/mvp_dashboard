@@ -2,9 +2,10 @@ import { getAdAccountSettings } from "@/server/actions/ad-account-settings";
 import { getMetaAdsMetrics } from "@/server/actions/metrics";
 import MetaAdsDashboardV2 from "../dashboard-v2";
 
-export default async function MetaAdsEcommercePage({ searchParams }: { searchParams: { from?: string; to?: string } }) {
+export default async function MetaAdsEcommercePage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
     const settings = await getAdAccountSettings();
     const isConnected = Boolean(settings?.facebookAdAccountId);
+    const params = await searchParams;
 
     return (
         <div className="space-y-6">
@@ -19,7 +20,7 @@ export default async function MetaAdsEcommercePage({ searchParams }: { searchPar
             {!isConnected ? (
                 <div className="p-8 text-center bg-gray-50 rounded-lg">Configure sua conta Meta Ads.</div>
             ) : (
-                <MetaAdsContent searchParams={searchParams} />
+                <MetaAdsContent searchParams={params} />
             )}
         </div>
     );

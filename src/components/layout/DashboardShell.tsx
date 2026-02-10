@@ -10,9 +10,10 @@ type Props = {
     userName: string;
     userImage: string | null;
     isSuperAdmin?: boolean;
+    metaDashboardType?: string;
 };
 
-export default function DashboardShell({ children, userName, userImage, isSuperAdmin = false }: Props) {
+export default function DashboardShell({ children, userName, userImage, isSuperAdmin = false, metaDashboardType }: Props) {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -24,6 +25,7 @@ export default function DashboardShell({ children, userName, userImage, isSuperA
                 isMobileOpen={isMobileOpen}
                 setIsMobileOpen={setIsMobileOpen}
                 isSuperAdmin={isSuperAdmin}
+                metaDashboardType={metaDashboardType}
             />
 
             <div

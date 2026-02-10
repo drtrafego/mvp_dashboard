@@ -23,6 +23,9 @@ export const adAccountSettings = pgTable("ad_account_settings", {
     // Google Analytics 4 Configuration
     ga4PropertyId: text("ga4_property_id"), // GA4 Property ID
 
+    // Dashboard Configuration
+    metaDashboardType: text("meta_dashboard_type").default("ecommerce"), // "ecommerce" | "captacao" | "lancamento"
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

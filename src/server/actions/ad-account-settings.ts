@@ -10,6 +10,7 @@ export type AdAccountSettingsData = {
     googleAdsCustomerId: string | null;
     facebookAdAccountId: string | null;
     ga4PropertyId: string | null;
+    metaDashboardType: string | null;
 };
 
 // Get current user's organization ID and check admin permission
@@ -72,6 +73,7 @@ export async function getAdAccountSettings(): Promise<AdAccountSettingsData | nu
             googleAdsCustomerId: null,
             facebookAdAccountId: null,
             ga4PropertyId: null,
+            metaDashboardType: "ecommerce",
         };
     }
 
@@ -79,6 +81,7 @@ export async function getAdAccountSettings(): Promise<AdAccountSettingsData | nu
         googleAdsCustomerId: settings[0].googleAdsCustomerId,
         facebookAdAccountId: settings[0].facebookAdAccountId,
         ga4PropertyId: settings[0].ga4PropertyId,
+        metaDashboardType: settings[0].metaDashboardType || "ecommerce",
     };
 }
 
@@ -101,6 +104,7 @@ export async function updateAdAccountSettings(data: AdAccountSettingsData) {
                 googleAdsCustomerId: data.googleAdsCustomerId,
                 facebookAdAccountId: data.facebookAdAccountId,
                 ga4PropertyId: data.ga4PropertyId,
+                metaDashboardType: data.metaDashboardType,
                 updatedAt: new Date(),
             })
             .where(eq(adAccountSettings.organizationId, organizationId));
@@ -111,6 +115,7 @@ export async function updateAdAccountSettings(data: AdAccountSettingsData) {
             googleAdsCustomerId: data.googleAdsCustomerId,
             facebookAdAccountId: data.facebookAdAccountId,
             ga4PropertyId: data.ga4PropertyId,
+            metaDashboardType: data.metaDashboardType,
         });
     }
 

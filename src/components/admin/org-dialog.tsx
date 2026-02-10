@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOrganization, updateOrganization } from "@/server/actions/organizations";
+import { updateOrgMetaDashboardType } from "@/server/actions/org-settings";
 
 type OrgDialogProps = {
     trigger?: React.ReactNode;
@@ -22,6 +23,7 @@ type OrgDialogProps = {
         id: string;
         name: string;
         slug: string;
+        metaDashboardType?: string;
     };
     onSuccess?: () => void;
 };
@@ -30,6 +32,7 @@ export function OrgDialog({ trigger, mode, org, onSuccess }: OrgDialogProps) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState(org?.name || "");
     const [slug, setSlug] = useState(org?.slug || "");
+    const [metaDashboard, setMetaDashboard] = useState(org?.metaDashboardType || "ecommerce");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -43,6 +46,7 @@ export function OrgDialog({ trigger, mode, org, onSuccess }: OrgDialogProps) {
             } else {
                 if (org) {
                     await updateOrganization(org.id, { name, slug });
+                    await updateOrgMetaDashboardType(org.id, metaDashboard);
                 }
             }
 
@@ -99,6 +103,23 @@ export function OrgDialog({ trigger, mode, org, onSuccess }: OrgDialogProps) {
                             className="col-span-3"
                         />
                     </div>
+                    {mode === "edit" && (
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="metaDashboard" className="text-right">
+                                Dashboard Meta
+                            </Label>
+                            <select
+                                id="metaDashboard"
+                                value={metaDashboard}
+                                onChange={(e) => setMetaDashboard(e.target.value)}
+                                className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                                <option value="ecommerce">E-commerce</option>
+                                <option value="captacao">Captação</option>
+                                <option value="lancamento">Lançamento</option>
+                            </select>
+                        </div>
+                    )}
                     {error && <p className="text-red-500 text-sm">{error}</p>}
                 </div>
                 <DialogFooter>

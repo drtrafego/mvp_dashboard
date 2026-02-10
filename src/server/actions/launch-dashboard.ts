@@ -14,6 +14,13 @@ export type LaunchMetrics = {
         trackingRate: number;
         leadsTracked: number;
         leadsUntracked: number;
+        impressions: number;
+        clicks: number;
+        ctr: number;
+        pageViews: number;
+        connectRate: number;
+        hookRate: number;
+        holdRate: number;
     };
     daily: {
         date: string;
@@ -62,10 +69,16 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
     const endDate = to ? new Date(`${to}T23:59:59.999Z`) : new Date();
     const startDate = from ? new Date(`${from}T00:00:00.000Z`) : subDays(new Date(), 30);
 
-    // 1. Fetch Investment (Spend) from Campaign Metrics
+    // 1. Fetch Investment + Ad Metrics from Campaign Metrics
     const metrics = await biDb.select({
         date: campaignMetrics.date,
         spend: campaignMetrics.spend,
+        impressions: campaignMetrics.impressions,
+        clicks: campaignMetrics.clicks,
+        landingPageViews: campaignMetrics.landingPageViews,
+        linkClicks: campaignMetrics.linkClicks,
+        videoViews3s: campaignMetrics.videoViews3s,
+        videoThruplays: campaignMetrics.videoThruplays,
     })
         .from(campaignMetrics)
         .where(and(
@@ -101,6 +114,19 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
     const trackedLeads = leads.filter(l => l.utmSource && l.utmSource.trim() !== "").length;
     const trackingRate = totalLeads > 0 ? (trackedLeads / totalLeads) * 100 : 0;
     const cpl = totalLeads > 0 ? totalInvestment / totalLeads : 0;
+
+    // Ad Performance Aggregations
+    const totalImpressions = metrics.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
+    const totalClicks = metrics.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
+    const totalPageViews = metrics.reduce((acc, curr) => acc + Number(curr.landingPageViews || 0), 0);
+    const totalLinkClicks = metrics.reduce((acc, curr) => acc + Number(curr.linkClicks || 0), 0);
+    const totalVideoViews3s = metrics.reduce((acc, curr) => acc + Number(curr.videoViews3s || 0), 0);
+    const totalVideoThruplays = metrics.reduce((acc, curr) => acc + Number(curr.videoThruplays || 0), 0);
+
+    const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    const connectRate = totalLinkClicks > 0 ? (totalPageViews / totalLinkClicks) * 100 : 0;
+    const hookRate = totalImpressions > 0 ? (totalVideoViews3s / totalImpressions) * 100 : 0;
+    const holdRate = totalVideoViews3s > 0 ? (totalVideoThruplays / totalVideoViews3s) * 100 : 0;
 
     // B. Temperature (P1 vs P2)
     // Logic: 
@@ -197,6 +223,13 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
             trackingRate,
             leadsTracked: trackedLeads,
             leadsUntracked: totalLeads - trackedLeads,
+            impressions: totalImpressions,
+            clicks: totalClicks,
+            ctr,
+            pageViews: totalPageViews,
+            connectRate,
+            hookRate,
+            holdRate,
         },
         daily,
         dailyBySource,

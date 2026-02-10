@@ -67,6 +67,7 @@ export const navItems = [
             </svg>
         ),
         color: "text-gray-500",
+        adminOnly: true,
     },
     {
         name: "Empresas",
@@ -87,9 +88,10 @@ interface SidebarProps {
     isMobileOpen: boolean;
     setIsMobileOpen: (v: boolean) => void;
     isSuperAdmin?: boolean;
+    metaDashboardType?: string;
 }
 
-export default function Sidebar({ collapsed, setCollapsed, isMobileOpen, setIsMobileOpen, isSuperAdmin = false }: SidebarProps) {
+export default function Sidebar({ collapsed, setCollapsed, isMobileOpen, setIsMobileOpen, isSuperAdmin = false, metaDashboardType }: SidebarProps) {
     const pathname = usePathname();
 
     return (
@@ -179,42 +181,48 @@ export default function Sidebar({ collapsed, setCollapsed, isMobileOpen, setIsMo
                                         {/* Submenu */}
                                         {!collapsed && (
                                             <div className="pl-10 space-y-1">
-                                                <Link
-                                                    href="/meta-ads/ecommerce"
-                                                    onClick={() => setIsMobileOpen(false)}
-                                                    className={cn(
-                                                        "block px-3 py-2 text-sm rounded-lg transition-colors",
-                                                        pathname === "/meta-ads/ecommerce" || pathname === "/meta-ads"
-                                                            ? "bg-blue-600 text-white font-medium"
-                                                            : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                    )}
-                                                >
-                                                    E-commerce
-                                                </Link>
-                                                <Link
-                                                    href="/meta-ads/captacao"
-                                                    onClick={() => setIsMobileOpen(false)}
-                                                    className={cn(
-                                                        "block px-3 py-2 text-sm rounded-lg transition-colors",
-                                                        pathname === "/meta-ads/captacao"
-                                                            ? "bg-blue-600 text-white font-medium"
-                                                            : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                    )}
-                                                >
-                                                    Captação
-                                                </Link>
-                                                <Link
-                                                    href="/meta-ads/launch"
-                                                    onClick={() => setIsMobileOpen(false)}
-                                                    className={cn(
-                                                        "block px-3 py-2 text-sm rounded-lg transition-colors",
-                                                        pathname === "/meta-ads/launch"
-                                                            ? "bg-blue-600 text-white font-medium"
-                                                            : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                                                    )}
-                                                >
-                                                    Lançamento
-                                                </Link>
+                                                {(isSuperAdmin || !metaDashboardType || metaDashboardType === "ecommerce") && (
+                                                    <Link
+                                                        href="/meta-ads/ecommerce"
+                                                        onClick={() => setIsMobileOpen(false)}
+                                                        className={cn(
+                                                            "block px-3 py-2 text-sm rounded-lg transition-colors",
+                                                            pathname === "/meta-ads/ecommerce" || pathname === "/meta-ads"
+                                                                ? "bg-blue-600 text-white font-medium"
+                                                                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                        )}
+                                                    >
+                                                        E-commerce
+                                                    </Link>
+                                                )}
+                                                {(isSuperAdmin || !metaDashboardType || metaDashboardType === "captacao") && (
+                                                    <Link
+                                                        href="/meta-ads/captacao"
+                                                        onClick={() => setIsMobileOpen(false)}
+                                                        className={cn(
+                                                            "block px-3 py-2 text-sm rounded-lg transition-colors",
+                                                            pathname === "/meta-ads/captacao"
+                                                                ? "bg-blue-600 text-white font-medium"
+                                                                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                        )}
+                                                    >
+                                                        Captação
+                                                    </Link>
+                                                )}
+                                                {(isSuperAdmin || !metaDashboardType || metaDashboardType === "lancamento") && (
+                                                    <Link
+                                                        href="/meta-ads/launch"
+                                                        onClick={() => setIsMobileOpen(false)}
+                                                        className={cn(
+                                                            "block px-3 py-2 text-sm rounded-lg transition-colors",
+                                                            pathname === "/meta-ads/launch"
+                                                                ? "bg-blue-600 text-white font-medium"
+                                                                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                        )}
+                                                    >
+                                                        Lançamento
+                                                    </Link>
+                                                )}
                                             </div>
                                         )}
                                     </li>

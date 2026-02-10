@@ -120,7 +120,51 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 />
             </div>
 
-            {/* Row 2: Charts Area (Temperature + Daily Evolution) */}
+            {/* Row 2: Performance KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                <KPICard
+                    title="Impressões"
+                    value={summary.impressions.toLocaleString('pt-BR')}
+                    color="blue"
+                />
+                <KPICard
+                    title="Cliques"
+                    value={summary.clicks.toLocaleString('pt-BR')}
+                    color="blue"
+                />
+                <KPICard
+                    title="CTR"
+                    value={`${summary.ctr.toFixed(2)}%`}
+                    color="blue"
+                />
+                <KPICard
+                    title="Vis. Página"
+                    value={summary.pageViews.toLocaleString('pt-BR')}
+                    color="blue"
+                />
+                <KPICard
+                    title="CPL"
+                    value={`R$ ${summary.cpl.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    color="orange"
+                />
+                <KPICard
+                    title="Connect Rate"
+                    value={`${summary.connectRate.toFixed(1)}%`}
+                    color="green"
+                />
+                <KPICard
+                    title="Hook Rate"
+                    value={`${summary.hookRate.toFixed(2)}%`}
+                    color="purple"
+                />
+                <KPICard
+                    title="Hold Rate"
+                    value={`${summary.holdRate.toFixed(1)}%`}
+                    color="purple"
+                />
+            </div>
+
+            {/* Row 3: Charts Area (Temperature + Daily Evolution) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
                 {/* Temperature Chart (4 cols) */}
