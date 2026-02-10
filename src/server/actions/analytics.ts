@@ -96,8 +96,28 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         campaign: campaignMetrics.campaignName,
         engagementRate: campaignMetrics.engagementRate, // Added for avg calculation
     })
-    // ...
-    // ...
+        .from(campaignMetrics)
+        .innerJoin(integrations, eq(campaignMetrics.integrationId, integrations.id))
+        .where(and(
+            eq(campaignMetrics.organizationId, orgId),
+            eq(integrations.provider, "google_analytics"),
+            and(
+                gte(campaignMetrics.date, startDate),
+                lte(campaignMetrics.date, endDate)
+            )
+        ));
+
+    console.log(`[getAnalyticsMetrics] Metrics found: ${metrics.length}`);
+
+    let totalSessions = 0;
+    let totalUsers = 0;
+    let totalConversions = 0;
+    let totalNewUsers = 0;
+    let totalPageViews = 0;
+    let totalEngagementRateSum = 0;
+    let engagementRateCount = 0;
+
+    // Calculate Totals from basic metrics
     for (const m of metrics) {
         totalSessions += (m.sessions || 0);
         totalUsers += (m.users || 0);
