@@ -5,8 +5,13 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell // Added Cell if used, or remove if not
 } from "recharts";
-import { HelpCircle, RefreshCw } from "lucide-react";
+import { HelpCircle, RefreshCw, RefreshCcw } from "lucide-react";
 import { DatePickerWithRange } from "../../components/ui/date-range-picker";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useTransition } from "react";
+import { syncMetaAds } from "@/server/actions/sync";
+import { useRouter } from "next/navigation";
 
 // --- Types ---
 type DailyMetric = {
@@ -455,6 +460,27 @@ const getHeatmapStyle = (value: number, min: number, max: number, inverse = fals
 
 export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode = 'ecommerce' }: DashboardProps) {
     const [activeTab, setActiveTab] = useState<'campaigns' | 'ads'>('campaigns'); // Cleaned up type
+    const [isPending, startTransition] = useTransition();
+    const router = useRouter();
+
+    const handleSync = () => {
+        startTransition(async () => {
+            try {
+                toast.info("Iniciando sincronização com Meta Ads...");
+                const result = await syncMetaAds(30); // Sync last 30 days
+
+                if (result.success) {
+                    toast.success(`Sincronização concluída! ${result.count} registros atualizados.`);
+                    router.refresh();
+                } else {
+                    toast.error(`Erro na sincronização: ${result.error || "Erro desconhecido"}`);
+                }
+            } catch (error) {
+                toast.error("Falha ao conectar com o servidor.");
+                console.error(error);
+            }
+        });
+    };
 
     // safeMap helpers - Typed 
     const safeMap = (arr: CampaignMetric[], key: keyof CampaignMetric) => arr.map(i => Number(i[key] || 0));
@@ -498,6 +524,17 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                     <p className="text-gray-500 text-sm mt-1">Acompanhe seus indicadores de performance</p>
                 </div>
                 <div className="flex items-center gap-3 bg-[#0f111a] p-1 rounded-lg border border-gray-800/50">
+                    <Button
+                        onClick={handleSync}
+                        disabled={isPending}
+                        variant="ghost"
+                        size="sm"
+                        className="text-gray-400 hover:text-white"
+                    >
+                        <RefreshCcw className={`w-4 h-4 mr-2 ${isPending ? "animate-spin" : ""}`} />
+                        {isPending ? "Sincronizando..." : "Sincronizar Agora"}
+                    </Button>
+                    <div className="h-6 w-px bg-gray-800" />
                     <DatePickerWithRange />
                 </div>
             </div>
