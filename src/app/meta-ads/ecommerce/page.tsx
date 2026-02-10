@@ -10,14 +10,10 @@ export default async function MetaAdsEcommercePage({ searchParams }: { searchPar
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">🔵 Meta Ads - E-commerce</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🔵 Meta Ads - E-commerce</h1>
                     <p className="text-gray-500">Análise de Vendas e ROAS</p>
                 </div>
-                {isConnected && (
-                    <span className="text-sm text-gray-500">
-                        Conta: {settings?.facebookAdAccountId}
-                    </span>
-                )}
+
             </div>
 
             {!isConnected ? (

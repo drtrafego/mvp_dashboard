@@ -82,7 +82,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                     <MetaIcon />
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Dashboard Captação</h1>
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Meta Lançamento</h1>
                         </div>
                         <div className="mt-1">
                             <p className="text-sm text-gray-500 dark:text-gray-400">Monitoramento de leads e temperatura em tempo real.</p>

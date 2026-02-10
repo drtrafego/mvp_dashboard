@@ -1,6 +1,6 @@
 import DashboardLaunch from "./dashboard-launch";
 import { getLaunchMetrics } from "@/server/actions/launch-dashboard";
-import DateRangeHeader from "@/components/layout/DateRangeHeader";
+
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -14,28 +14,23 @@ export default async function LaunchDashboardPage(props: { searchParams: SearchP
 
     try {
         metrics = await getLaunchMetrics(from, to);
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("Error fetching launch metrics:", e);
-        error = e.message;
+        error = (e as Error).message;
     }
 
     return (
-        <div className="min-h-screen bg-[#050505] text-gray-200 font-sans">
-            <DateRangeHeader title="Meta Lançamento" />
-
-            <div className="p-6 md:p-8">
+        <div className="space-y-6">
+            <div className="p-0">
                 {error ? (
-                    <div className="p-8 text-white flex flex-col items-center justify-center h-[50vh] gap-4">
-                        <div className="text-red-500 text-xl font-bold">Erro ao carregar dados</div>
-                        <div className="text-gray-400 font-mono bg-black/50 p-4 rounded border border-red-900/50">
-                            {error}
-                        </div>
+                    <div className="p-8 text-center bg-gray-50 dark:bg-gray-800 rounded-lg text-red-500">
+                        Erro: {error}
                     </div>
                 ) : metrics ? (
                     <DashboardLaunch metrics={metrics} />
                 ) : (
                     <div className="flex items-center justify-center h-[50vh]">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     </div>
                 )}
             </div>
