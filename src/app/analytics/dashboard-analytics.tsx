@@ -144,28 +144,10 @@ export default function AnalyticsDashboard({
     cityData,
     regionData
 }: AnalyticsDashboardProps) {
-    const [isSyncing, setIsSyncing] = useState(false);
-
-    const handleSync = async () => {
-        setIsSyncing(true);
-        try {
-            const result = await syncGA4();
-            if (result.success) {
-                alert(`Sucesso: ${result.message}`);
-                window.location.reload();
-            } else {
-                alert(`Erro: ${result.error}`);
-            }
-        } catch (error) {
-            alert("Erro na chamada de sincronização.");
-            console.error(error);
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
-    // Safety check for empty daily charts
-    const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], sessions: 0, users: 0, conversions: 0, engagementRate: 0 }];
+    // Sort data for charts (Legends ordered by value desc)
+    const sortedOsData = [...osData].sort((a, b) => b.value - a.value);
+    const sortedDeviceData = [...deviceData].sort((a, b) => b.value - a.value);
+    const sortedBrowserData = [...browserData].sort((a, b) => b.value - a.value);
 
     return (
         <div className="min-h-screen bg-[#050505] text-gray-200 p-6 md:p-8 space-y-6 font-sans">

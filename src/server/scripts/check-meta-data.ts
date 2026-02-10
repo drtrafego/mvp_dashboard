@@ -14,7 +14,7 @@ async function main() {
     }
 
     for (const integration of metaIntegrations) {
-        console.log(`Integration ID: ${integration.id}, Name: ${integration.name}`);
+        console.log(`Integration ID: ${integration.id}, Org ID: ${integration.organizationId}`);
 
         const latestMetrics = await biDb.select()
             .from(campaignMetrics)
