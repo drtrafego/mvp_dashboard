@@ -100,7 +100,7 @@ export default function DateRangeHeader() {
                     <div className="p-3">
                         <RangeCalendar
                             aria-label="Date Range Selection"
-                            value={value}
+                            value={value as any}
                             onChange={handleDateChange}
                             visibleMonths={2}
                             pageBehavior="visible"
