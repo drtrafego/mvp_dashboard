@@ -58,6 +58,7 @@ export default async function AnalyticsPage(props: { searchParams: SearchParams 
                         pages={metrics.pages}
                         osData={metrics.osData}
                         deviceData={metrics.deviceData}
+                        browserData={metrics.browserData}
                         weekData={metrics.weekData}
                         cityData={metrics.cityData}
                         regionData={metrics.regionData}
