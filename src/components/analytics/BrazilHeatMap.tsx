@@ -91,7 +91,12 @@ export function BrazilHeatMap({ data, className }: Props) {
                 className="w-full h-full max-h-[400px]"
                 style={{ width: "100%", height: "100%" }}
             >
-                <ZoomableGroup center={[-54, -15]} zoom={1} minZoom={1} maxZoom={4} translateExtent={[[-180, -90], [180, 90]]}>
+                <ZoomableGroup
+                    center={[-54, -15]}
+                    zoom={1}
+                    disablePanning={true}
+                    disableZooming={true}
+                >
                     <Geographies geography={BRAZIL_TOPO_JSON}>
                         {({ geographies }) =>
                             geographies.map((geo) => {
@@ -113,7 +118,7 @@ export function BrazilHeatMap({ data, className }: Props) {
                                                     strokeWidth={0.5}
                                                     style={{
                                                         default: { outline: "none" },
-                                                        hover: { fill: "#fbbf24", outline: "none", cursor: "pointer" }, // Hover highlight
+                                                        hover: { fill: "#fbbf24", outline: "none", cursor: "default" }, // Hover highlight
                                                         pressed: { outline: "none" },
                                                     }}
                                                 />
