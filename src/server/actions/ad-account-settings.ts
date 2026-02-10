@@ -10,7 +10,7 @@ export type AdAccountSettingsData = {
     googleAdsCustomerId: string | null;
     facebookAdAccountId: string | null;
     ga4PropertyId: string | null;
-    metaDashboardType: string | null;
+    metaDashboardType?: string | null;
 };
 
 // Get current user's organization ID and check admin permission
@@ -98,15 +98,20 @@ export async function updateAdAccountSettings(data: AdAccountSettingsData) {
 
     if (existing.length) {
         // Update existing
+        const updateData: any = {
+            googleAdsCustomerId: data.googleAdsCustomerId,
+            facebookAdAccountId: data.facebookAdAccountId,
+            ga4PropertyId: data.ga4PropertyId,
+            updatedAt: new Date(),
+        };
+
+        if (data.metaDashboardType !== undefined) {
+            updateData.metaDashboardType = data.metaDashboardType;
+        }
+
         await biDb
             .update(adAccountSettings)
-            .set({
-                googleAdsCustomerId: data.googleAdsCustomerId,
-                facebookAdAccountId: data.facebookAdAccountId,
-                ga4PropertyId: data.ga4PropertyId,
-                metaDashboardType: data.metaDashboardType,
-                updatedAt: new Date(),
-            })
+            .set(updateData)
             .where(eq(adAccountSettings.organizationId, organizationId));
     } else {
         // Create new
@@ -115,7 +120,7 @@ export async function updateAdAccountSettings(data: AdAccountSettingsData) {
             googleAdsCustomerId: data.googleAdsCustomerId,
             facebookAdAccountId: data.facebookAdAccountId,
             ga4PropertyId: data.ga4PropertyId,
-            metaDashboardType: data.metaDashboardType,
+            metaDashboardType: data.metaDashboardType || "ecommerce",
         });
     }
 

@@ -89,7 +89,7 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
                                 ))}
                             </Pie>
                             <Tooltip
-                                formatter={(val: number) => formatCurrency(val)}
+                                formatter={(val: number | undefined) => formatCurrency(val || 0)}
                                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
                             />
                             <Legend verticalAlign="bottom" height={36} />
@@ -142,7 +142,7 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
                                 tickLine={false}
                             />
                             <Tooltip
-                                formatter={(val: number) => formatCurrency(val)}
+                                formatter={(val: number | undefined) => formatCurrency(val || 0)}
                                 labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
                                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
                             />
