@@ -6,7 +6,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Cell, PieChart, Pie, Legend
 } from "recharts";
-import { ArrowUp, ArrowDown, Filter, Download, Grip, HelpCircle, RefreshCw, Calendar, Monitor, Smartphone, Tablet } from "lucide-react";
+import { ArrowDown, Filter, RefreshCw } from "lucide-react";
 
 // --- Types ---
 type DailyAnalytics = {
@@ -34,6 +34,7 @@ type DimensionData = {
     name: string;
     value: number;
     color?: string;
+    region?: string;
 };
 
 type AnalyticsDashboardProps = {
@@ -126,7 +127,6 @@ const KPICard = ({
 // --- Main Layout ---
 
 import { syncGA4 } from "@/server/actions/sync-google";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { BrazilHeatMap } from "@/components/analytics/BrazilHeatMap";
 
 // ... (existing imports)
@@ -264,7 +264,7 @@ export default function AnalyticsDashboard({
                             <span className="col-span-4 text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
                         </div>
                         <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-                            {(cityData && cityData.length > 0 ? cityData : []).map((item: any, i: number) => (
+                            {(cityData && cityData.length > 0 ? cityData : []).map((item: DimensionData, i: number) => (
                                 <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-800/30 hover:bg-white/5 transition-colors items-center">
                                     <span className="col-span-4 text-gray-400 truncate" title={item.region || "N/A"}>
                                         {item.region || "—"}
@@ -386,8 +386,8 @@ export default function AnalyticsDashboard({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* OS Donut */}
-                <Card className="flex flex-col min-h-[300px]">
-                    <h3 className="text-sm font-semibold text-gray-300 mb-2">Sistema Operacional</h3>
+                <Card className="flex flex-col min-h-[350px]">
+                    <h3 className="text-sm font-semibold text-white mb-2">Sistema Operacional</h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -397,24 +397,39 @@ export default function AnalyticsDashboard({
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={90}
+                                    innerRadius="55%"
+                                    outerRadius="85%"
                                     paddingAngle={2}
+                                    stroke="none"
                                 >
                                     {osData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff' }} itemStyle={{ color: '#fff' }} />
-                                <Legend layout="vertical" verticalAlign="middle" align="right" iconSize={8} wrapperStyle={{ fontSize: '10px', color: '#9ca3af' }} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <Legend
+                                    layout="vertical"
+                                    verticalAlign="middle"
+                                    align="right"
+                                    iconSize={10}
+                                    wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
+                                    formatter={(value, entry: any) => (
+                                        <span className="text-gray-300 ml-1">
+                                            {value} <span className="text-gray-500">({entry.payload.value.toLocaleString()})</span>
+                                        </span>
+                                    )}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
 
                 {/* Device Donut */}
-                <Card className="flex flex-col min-h-[300px]">
-                    <h3 className="text-sm font-semibold text-gray-300 mb-2">Dispositivo</h3>
+                <Card className="flex flex-col min-h-[350px]">
+                    <h3 className="text-sm font-semibold text-white mb-2">Dispositivo</h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -424,41 +439,68 @@ export default function AnalyticsDashboard({
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={90}
+                                    innerRadius="55%"
+                                    outerRadius="85%"
                                     paddingAngle={2}
+                                    stroke="none"
                                 >
                                     {deviceData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                        <Cell key={`cell-${index}`} fill={entry.color || ['#3b82f6', '#8b5cf6', '#ec4899'][index % 3]} />
                                     ))}
                                 </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff' }} itemStyle={{ color: '#fff' }} />
-                                <Legend layout="vertical" verticalAlign="middle" align="right" iconSize={8} wrapperStyle={{ fontSize: '10px', color: '#9ca3af' }} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <Legend
+                                    layout="vertical"
+                                    verticalAlign="middle"
+                                    align="right"
+                                    iconSize={10}
+                                    wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
+                                    formatter={(value, entry: any) => (
+                                        <span className="text-gray-300 ml-1">
+                                            {value} <span className="text-gray-500">({entry.payload.value.toLocaleString()})</span>
+                                        </span>
+                                    )}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </Card>
 
                 {/* URL Table */}
-                <Card className="!p-0 overflow-hidden flex flex-col min-h-[300px] border-gray-800">
+                <Card className="!p-0 overflow-hidden flex flex-col min-h-[350px] border-gray-800">
                     <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] grid grid-cols-12 gap-2 items-center">
-                        <span className="col-span-8 text-xs font-bold text-gray-400 uppercase">Página (URL)</span>
-                        <span className="col-span-4 text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
+                        <div className="col-span-8 flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase">Página (URL)</span>
+                            <Filter size={12} className="text-gray-600 cursor-pointer hover:text-gray-300 transition-colors" />
+                        </div>
+                        <div className="col-span-4 flex items-center justify-end gap-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
+                            <ArrowDown size={12} className="text-gray-600 cursor-pointer hover:text-gray-300 transition-colors" />
+                        </div>
                     </div>
                     <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
                         {pages.map((p, i) => (
                             <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-800/30 hover:bg-white/5 transition-colors items-center">
-                                <span className="col-span-8 text-gray-400 truncate" title={p.path}>
+                                <span className="col-span-8 text-gray-400 truncate font-medium" title={p.path}>
                                     {p.path}
                                 </span>
                                 <div className="col-span-4 flex items-center justify-end gap-3">
                                     <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden max-w-[60px]">
-                                        <div className="h-full bg-purple-500 rounded-full" style={{ width: `${Math.min(((p.views / (pages[0]?.views || 1)) * 100), 100)}%` }}></div>
+                                        <div
+                                            className="h-full bg-purple-500 rounded-full"
+                                            style={{ width: `${Math.min(((p.views / (pages[0]?.views || 1)) * 100), 100)}%` }}
+                                        />
                                     </div>
                                     <span className="text-white font-mono w-8 text-right">{p.views.toLocaleString()}</span>
                                 </div>
                             </div>
                         ))}
+                        {pages.length === 0 && (
+                            <div className="p-8 text-center text-gray-500 text-xs">Nenhuma página acessada.</div>
+                        )}
                     </div>
                 </Card>
 
