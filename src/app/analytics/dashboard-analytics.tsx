@@ -169,7 +169,6 @@ export default function AnalyticsDashboard({
         <div className="min-h-screen bg-[#050505] text-gray-200 p-6 md:p-8 space-y-6 font-sans">
 
             {/* Header */}
-            {/* Header */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
                 <div className="flex items-center gap-4">
                     <span className="text-4xl">📊</span>
@@ -178,8 +177,6 @@ export default function AnalyticsDashboard({
                             <h1 className="text-2xl font-bold tracking-tight text-white">Analytics</h1>
                         </div>
                         <div className="mt-1">
-                            {/* DatePicker removed - now in Global Header */}
-                            {/* <DatePickerWithRange /> */}
                             <p className="text-sm text-gray-500">Visão geral do tráfego e engajamento.</p>
                         </div>
                     </div>
@@ -193,14 +190,6 @@ export default function AnalyticsDashboard({
                     >
                         <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
                         {isSyncing ? "Sincronizando..." : "Sincronizar Agora"}
-                    </button>
-
-                    {/* Mock Filters */}
-                    <button className="flex items-center gap-2 bg-[#0f111a] border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-sm hover:text-white transition">
-                        Cidade <ArrowDown size={14} />
-                    </button>
-                    <button className="flex items-center gap-2 bg-[#0f111a] border border-gray-800 text-gray-400 px-4 py-2 rounded-lg text-sm hover:text-white transition">
-                        Região <ArrowDown size={14} />
                     </button>
                 </div>
             </header>
@@ -254,45 +243,39 @@ export default function AnalyticsDashboard({
                 />
             </div>
 
-            {/* Middle Section: Map | Line | Bar | Donut */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[400px]">
+            {/* Middle Section: Map | Line | Bar | Sources */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
                 {/* Left: Map & Table (4 cols) */}
-                <div className="lg:col-span-4 flex flex-col gap-4">
-
+                <div className="lg:col-span-4 flex flex-col gap-6">
                     {/* Map Card */}
-                    <Card className="flex-1 min-h-[300px] relative p-0 overflow-hidden flex items-center justify-center bg-[#0f111a] border-gray-800">
-                        <BrazilHeatMap data={regionData || []} className="p-4" />
-                        <div className="absolute top-4 left-4">
+                    <Card className="min-h-[400px] relative p-0 overflow-hidden flex items-center justify-center bg-[#0f111a] border-gray-800">
+                        <BrazilHeatMap data={regionData || []} className="p-4 w-full h-full" />
+                        <div className="absolute top-4 left-4 pointer-events-none">
                             <h3 className="text-sm font-semibold text-white">Geografia</h3>
                         </div>
                     </Card>
 
-                    {/* Region Table - High Fidelity (Region | City | Accesses) */}
-                    <Card className="h-[250px] !p-0 overflow-hidden border-gray-800">
+                    {/* Region Table (Below Map) */}
+                    <Card className="h-[300px] !p-0 overflow-hidden border-gray-800 flex flex-col">
                         <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] grid grid-cols-12 gap-2 items-center">
                             <span className="col-span-4 text-xs font-bold text-gray-400 uppercase">Região</span>
                             <span className="col-span-4 text-xs font-bold text-gray-400 uppercase">Cidade</span>
                             <span className="col-span-4 text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
                         </div>
-                        <div className="overflow-y-auto h-full pb-10 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+                        <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
                             {(cityData && cityData.length > 0 ? cityData : []).map((item: any, i: number) => (
                                 <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-800/30 hover:bg-white/5 transition-colors items-center">
-                                    {/* Region Column */}
                                     <span className="col-span-4 text-gray-400 truncate" title={item.region || "N/A"}>
                                         {item.region || "—"}
                                     </span>
-
-                                    {/* City Column */}
                                     <span className="col-span-4 text-gray-200 truncate font-medium" title={item.name}>
                                         {item.name}
                                     </span>
-
-                                    {/* Accesses Column + Bar */}
                                     <div className="col-span-4 flex items-center justify-end gap-3">
-                                        <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden max-w-[60px]">
+                                        <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden max-w-[50px]">
                                             <div
-                                                className="h-full bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
+                                                className="h-full bg-amber-500 rounded-full"
                                                 style={{ width: `${Math.min(((item.value / (cityData?.[0]?.value || 1)) * 100), 100)}%` }}
                                             ></div>
                                         </div>
@@ -310,16 +293,16 @@ export default function AnalyticsDashboard({
                     </Card>
                 </div>
 
-                {/* Center: Charts (8 cols) */}
-                <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+                {/* Right: Charts (8 cols) */}
+                <div className="lg:col-span-8 flex flex-col gap-6">
 
                     {/* Line Chart: Acessos no Período */}
-                    <Card className="flex flex-col">
+                    <Card className="flex flex-col min-h-[350px]">
                         <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
                             Acessos no Período
                         </h3>
-                        <div className="flex-1">
+                        <div className="flex-1 w-full min-h-0">
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={safeDaily} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
@@ -329,69 +312,70 @@ export default function AnalyticsDashboard({
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3b" vertical={false} />
-                                    <XAxis dataKey="date" stroke="#6b7280" fontSize={10} tickFormatter={(val) => val.split("-")[2]} axisLine={false} tickLine={false} />
+                                    <XAxis
+                                        dataKey="date"
+                                        stroke="#6b7280"
+                                        fontSize={10}
+                                        tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
                                     <YAxis stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
-                                    <Tooltip contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }} />
-                                    <Area type="monotone" dataKey="sessions" stroke="#eab308" strokeWidth={2} fill="url(#gradSes)" />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
+                                        labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                    />
+                                    <Area type="monotone" dataKey="sessions" name="Sessões" stroke="#eab308" strokeWidth={2} fill="url(#gradSes)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     </Card>
 
-                    {/* Bar Chart: Acessos na Semana & Donut: Origem */}
-                    <div className="flex flex-col gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Weekly Bar Chart */}
-                        <Card className="flex-1 flex flex-col min-h-[180px]">
+                        <Card className="flex flex-col min-h-[250px]">
                             <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-orange-500"></span>
                                 Acessos na Semana
                             </h3>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={weekData}>
-                                    <XAxis dataKey="day" stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
-                                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }} />
-                                    <Bar dataKey="value" fill="#f97316" radius={[4, 4, 0, 0]} barSize={20} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <div className="flex-1 w-full min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={weekData}>
+                                        <XAxis dataKey="day" stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
+                                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }} />
+                                        <Bar dataKey="value" name="Acessos" fill="#f97316" radius={[4, 4, 0, 0]} barSize={20} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
                         </Card>
 
-                        {/* Origins Donut */}
-                        <Card className="flex-1 flex flex-row items-center justify-between p-4 min-h-[180px]">
-                            <div className="flex-1 h-full min-h-[140px] relative">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={sources}
-                                            dataKey="sessions"
-                                            nameKey="name"
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={40}
-                                            outerRadius={60}
-                                            paddingAngle={2}
-                                        >
-                                            {sources.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={['#f97316', '#ef4444', '#eab308', '#a855f7', '#3b82f6'][index % 5]} stroke="none" />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff' }} itemStyle={{ color: '#fff' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <span className="text-xs font-bold text-gray-500">Origem</span>
-                                </div>
-                            </div>
-                            <div className="w-1/2 text-xs space-y-1 pl-2">
-                                <h4 className="text-gray-300 font-bold mb-2">Origem dos Acessos</h4>
-                                {sources.slice(0, 5).map((s, i) => (
-                                    <div key={i} className="flex items-center gap-2 justify-between">
-                                        <div className="flex items-center gap-1.5 overflow-hidden">
-                                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ['#f97316', '#ef4444', '#eab308', '#a855f7', '#3b82f6'][i % 5] }}></div>
-                                            <span className="text-gray-400 truncate max-w-[80px]">{s.name}</span>
+                        {/* Traffic Sources List (Replaces Donut) */}
+                        <Card className="flex flex-col">
+                            <h3 className="text-sm font-semibold text-white mb-4">Fontes de Tráfego</h3>
+                            <div className="flex-1 space-y-4 overflow-y-auto max-h-[200px] pr-2 scrollbar-thin scrollbar-thumb-gray-700">
+                                {sources.slice(0, 6).map((s, i) => (
+                                    <div key={i} className="space-y-1">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ['#f97316', '#ef4444', '#eab308', '#a855f7', '#3b82f6'][i % 5] }}></div>
+                                                <span className="text-gray-300 font-medium truncate max-w-[120px]" title={s.name}>{s.name}</span>
+                                            </div>
+                                            <span className="text-gray-400">{s.sessions} ({s.percentage.toFixed(1)}%)</span>
                                         </div>
-                                        <span className="text-white font-mono">{s.percentage.toFixed(1)}%</span>
+                                        <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full"
+                                                style={{
+                                                    width: `${Math.max(s.percentage, 2)}%`,
+                                                    backgroundColor: ['#f97316', '#ef4444', '#eab308', '#a855f7', '#3b82f6'][i % 5]
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                 ))}
+                                {sources.length === 0 && (
+                                    <p className="text-xs text-gray-500 text-center py-4">Sem dados de origem.</p>
+                                )}
                             </div>
                         </Card>
                     </div>
@@ -399,12 +383,12 @@ export default function AnalyticsDashboard({
             </div>
 
             {/* Bottom Row: OS | Device | URL */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[250px]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[300px]">
 
                 {/* OS Donut */}
                 <Card className="flex flex-col">
                     <h3 className="text-sm font-semibold text-gray-300 mb-2">Sistema Operacional</h3>
-                    <div className="flex-1 flex items-center">
+                    <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -431,7 +415,7 @@ export default function AnalyticsDashboard({
                 {/* Device Donut */}
                 <Card className="flex flex-col">
                     <h3 className="text-sm font-semibold text-gray-300 mb-2">Dispositivo</h3>
-                    <div className="flex-1 flex items-center">
+                    <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -461,10 +445,10 @@ export default function AnalyticsDashboard({
                         <h3 className="text-sm font-semibold text-gray-300">Acessos por URL</h3>
                         <Filter size={14} className="text-gray-500" />
                     </div>
-                    <div className="overflow-y-auto flex-1 p-2 space-y-1">
+                    <div className="overflow-y-auto flex-1 p-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-700">
                         {pages.map((p, i) => (
                             <div key={i} className="flex justify-between items-center px-3 py-2 text-xs hover:bg-white/5 rounded border border-transparent hover:border-gray-800 transition-colors">
-                                <span className="text-gray-400 truncate max-w-[70%]">{p.path}</span>
+                                <span className="text-gray-400 truncate max-w-[70%]" title={p.path}>{p.path}</span>
                                 <span className="bg-orange-900/20 text-orange-500 px-2 py-0.5 rounded font-mono">{p.views}</span>
                             </div>
                         ))}
