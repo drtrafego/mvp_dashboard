@@ -357,22 +357,7 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
                     value: Number(row.activeUsers || 0),
                 }));
 
-                // Fetch Interest Data
-                const interestRows = await runReport(
-                    accessToken,
-                    targetPropertyId,
-                    from || '30daysAgo',
-                    to || 'today',
-                    [{ name: 'interestAffinityCategory' }],
-                    [{ name: 'activeUsers' }],
-                    [{ metric: { metricName: 'activeUsers' }, desc: true }],
-                    10
-                );
 
-                interestData = interestRows.map((row: any) => ({
-                    name: row.interestAffinityCategory || 'Unknown',
-                    value: Number(row.activeUsers || 0),
-                }));
 
             } else {
                 console.warn("[getAnalyticsMetrics] Missing GA4_PROPERTY_ID locally and in settings. Skipping City/Region fetch.");

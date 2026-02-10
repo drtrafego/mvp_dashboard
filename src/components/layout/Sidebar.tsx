@@ -203,6 +203,18 @@ export default function Sidebar({ collapsed, setCollapsed, isMobileOpen, setIsMo
                                                 >
                                                     Captação
                                                 </Link>
+                                                <Link
+                                                    href="/meta-ads/launch"
+                                                    onClick={() => setIsMobileOpen(false)}
+                                                    className={cn(
+                                                        "block px-3 py-2 text-sm rounded-lg transition-colors",
+                                                        pathname === "/meta-ads/launch"
+                                                            ? "bg-blue-600 text-white font-medium"
+                                                            : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                                                    )}
+                                                >
+                                                    Lançamento
+                                                </Link>
                                             </div>
                                         )}
                                     </li>
