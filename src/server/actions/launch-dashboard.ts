@@ -69,8 +69,8 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
     const leads = await biDb.select({
         date: leadAttribution.conversionDate,
         source: leadAttribution.source,
-        utmSource: leadAttribution.utmSource,
-        utmMedium: leadAttribution.utmMedium,
+        utmSource: leadAttribution.source,
+        utmMedium: leadAttribution.medium,
         utmCampaign: leadAttribution.utmCampaign,
     })
         .from(leadAttribution)
