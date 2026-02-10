@@ -142,7 +142,7 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
         .sort((a, b) => a.date.localeCompare(b.date));
 
     // D. Drilldowns (Source/Medium/Campaign) - Top 10
-    const groupAndCount = (data: typeof leads, key: keyof typeof leads) => {
+    const groupAndCount = (data: typeof leads, key: keyof (typeof leads)[0]) => {
         const counts = new Map<string, number>();
         data.forEach(item => {
             const val = String(item[key] || "(not set)");
