@@ -13,6 +13,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sessionsTable: sessions,
         verificationTokensTable: verificationTokens,
     }),
+    session: {
+        strategy: "database",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+        updateAge: 24 * 60 * 60, // 24 hours
+    },
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,

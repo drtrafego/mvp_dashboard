@@ -66,6 +66,14 @@ export type AnalyticsMetrics = {
         name: string;
         value: number;
     }[];
+    genderData: {
+        name: string;
+        value: number;
+    }[];
+    interestData: {
+        name: string;
+        value: number;
+    }[];
 };
 
 export async function getAnalyticsMetrics(from?: string, to?: string): Promise<AnalyticsMetrics> {
@@ -272,6 +280,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     // This matches the pattern in sync-google.ts and uses the user's connected account.
     let cityData: any[] = [];
     let regionData: any[] = [];
+    let genderData: any[] = [];
+    let interestData: any[] = [];
 
     // 1. Get Integration Token
     const integration = await biDb.query.integrations.findFirst({
@@ -330,6 +340,40 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
                     value: Number(row.sessions || 0),
                 }));
 
+                // Fetch Gender Data
+                const genderRows = await runReport(
+                    accessToken,
+                    targetPropertyId,
+                    from || '30daysAgo',
+                    to || 'today',
+                    [{ name: 'userGender' }],
+                    [{ name: 'activeUsers' }],
+                    undefined,
+                    10
+                );
+
+                genderData = genderRows.map((row: any) => ({
+                    name: row.userGender || 'Unknown',
+                    value: Number(row.activeUsers || 0),
+                }));
+
+                // Fetch Interest Data
+                const interestRows = await runReport(
+                    accessToken,
+                    targetPropertyId,
+                    from || '30daysAgo',
+                    to || 'today',
+                    [{ name: 'interestAffinityCategory' }],
+                    [{ name: 'activeUsers' }],
+                    [{ metric: { metricName: 'activeUsers' }, desc: true }],
+                    10
+                );
+
+                interestData = interestRows.map((row: any) => ({
+                    name: row.interestAffinityCategory || 'Unknown',
+                    value: Number(row.activeUsers || 0),
+                }));
+
             } else {
                 console.warn("[getAnalyticsMetrics] Missing GA4_PROPERTY_ID locally and in settings. Skipping City/Region fetch.");
             }
@@ -361,6 +405,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         browserData,
         weekData,
         cityData,
-        regionData
+        regionData,
+        genderData,
+        interestData
     };
 }

@@ -62,6 +62,8 @@ export default async function AnalyticsPage(props: { searchParams: SearchParams 
                         weekData={metrics.weekData}
                         cityData={metrics.cityData}
                         regionData={metrics.regionData}
+                        genderData={metrics.genderData}
+                        interestData={metrics.interestData}
                     />
                 ) : (
                     <div className="p-8 text-white flex flex-col items-center justify-center h-screen gap-4">
