@@ -11,9 +11,14 @@ type DashboardLaunchProps = {
 };
 
 // --- Components ---
+const MetaIcon = () => (
+    <svg className="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2.04c-5.5 0-10 4.49-10 10.02c0 5.01 3.69 9.12 8.52 9.88v-6.99H7.99v-2.89h2.53V9.41c0-2.5 1.49-3.89 3.77-3.89c1.09 0 2.23.19 2.23.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.89h-2.33v6.98C18.31 20.61 22 16.5 22 11.48c0-5.53-4.5-10.02-10-10.02z" />
+    </svg>
+);
 
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-    <div className={`bg-[#0f111a] rounded-2xl border border-gray-800/50 p-6 shadow-xl ${className}`}>
+    <div className={`bg-white dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-6 shadow-sm dark:shadow-xl ${className}`}>
         {children}
     </div>
 );
@@ -32,18 +37,18 @@ const KPICard = ({
     color?: string;
 }) => {
     return (
-        <Card className="relative overflow-hidden group !p-5 bg-gradient-to-br from-[#12141f] to-[#1a1d2d] border-gray-800">
+        <Card className="relative overflow-hidden group !p-5 bg-white dark:bg-gradient-to-br dark:from-[#12141f] dark:to-[#1a1d2d] border-gray-200 dark:border-gray-800">
             <div className="flex justify-between items-start z-10 relative">
                 <div>
-                    <h3 className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">{title}</h3>
-                    <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
+                    <h3 className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">{title}</h3>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</div>
                     {subValue && (
                         <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
                             {subValue}
                         </div>
                     )}
                 </div>
-                {icon && <div className={`p-2 rounded-lg bg-opacity-20 ${color ? `text-${color}-400 bg-${color}-500/20` : 'text-gray-400 bg-gray-700/20'}`}>{icon}</div>}
+                {icon && <div className={`p-2 rounded-lg bg-opacity-20 ${color ? `text-${color}-400 bg-${color}-500/20` : 'text-gray-400 bg-gray-100 dark:bg-gray-700/20'}`}>{icon}</div>}
             </div>
         </Card>
     );
@@ -74,13 +79,13 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
         <div className="space-y-6">
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
                 <div className="flex items-center gap-4">
-                    <span className="text-4xl">🚀</span>
+                    <MetaIcon />
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight text-white">Dashboard Captação</h1>
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Dashboard Captação</h1>
                         </div>
                         <div className="mt-1">
-                            <p className="text-sm text-gray-500">Monitoramento de leads e temperatura em tempo real.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Monitoramento de leads e temperatura em tempo real.</p>
                         </div>
                     </div>
                 </div>
@@ -118,7 +123,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
 
                 {/* Temperature Chart (4 cols) */}
                 <Card className="lg:col-span-4 flex flex-col min-h-[400px]">
-                    <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                         <Thermometer size={16} className="text-red-400" />
                         Temperatura + Pesquisa (Visão Geral)
                     </h3>
@@ -157,8 +162,8 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 </Card>
 
                 {/* Daily Leads by Source - Evolution (8 cols) */}
-                <Card className="lg:col-span-8 flex flex-col min-h-[400px] bg-[#1a1d2e] border-indigo-900/30">
-                    <h3 className="text-sm font-semibold text-white mb-4 pl-2">Captação - UTM SOURCE (Evolução Diária)</h3>
+                <Card className="lg:col-span-8 flex flex-col min-h-[400px] bg-white dark:bg-[#1a1d2e] border-gray-200 dark:border-indigo-900/30">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 pl-2">Captação - UTM SOURCE (Evolução Diária)</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={dailyBySource || []}>
@@ -197,7 +202,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
             {/* Row 3: Daily Bars (Leads & Investment) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Leads por Dia (Barras)</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Leads por Dia (Barras)</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={safeDaily}>
@@ -223,7 +228,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 </Card>
 
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Investimento por Dia (Barras)</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Investimento por Dia (Barras)</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={safeDaily}>
@@ -254,13 +259,13 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
             <div className="space-y-6">
 
                 {/* UTM Source Table */}
-                <Card className="overflow-hidden !p-0 bg-[#1a1d2e] border-indigo-900/30">
-                    <div className="p-4 border-b border-white/5 bg-white/5">
-                        <h3 className="text-base font-semibold text-white">Utm Source</h3>
+                <Card className="overflow-hidden !p-0 bg-white dark:bg-[#1a1d2e] border-gray-200 dark:border-indigo-900/30">
+                    <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">Utm Source</h3>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-white/5 text-gray-400 font-medium">
+                            <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 font-medium">
                                 <tr>
                                     <th className="px-4 py-3">#</th>
                                     <th className="px-4 py-3 w-full">Source</th>
@@ -269,10 +274,10 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {utmSource.map((s, i) => (
-                                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                         <td className="px-4 py-3 text-gray-500">{i + 1}</td>
-                                        <td className="px-4 py-3 font-medium text-white">{s.name}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-white">{s.leads}</td>
+                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{s.name}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">{s.leads}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -281,13 +286,13 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 </Card>
 
                 {/* UTM Medium Table */}
-                <Card className="overflow-hidden !p-0 bg-[#0f172a] border-blue-900/30">
-                    <div className="p-4 border-b border-white/5 bg-blue-900/20">
-                        <h3 className="text-base font-semibold text-white">UTM MEDIUM</h3>
+                <Card className="overflow-hidden !p-0 bg-white dark:bg-[#0f172a] border-gray-200 dark:border-blue-900/30">
+                    <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-blue-50 dark:bg-blue-900/20">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">UTM MEDIUM</h3>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-white/5 text-gray-400 font-medium">
+                            <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 font-medium">
                                 <tr>
                                     <th className="px-4 py-3">#</th>
                                     <th className="px-4 py-3 w-full">Medium</th>
@@ -296,10 +301,10 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {utmMedium.map((s, i) => (
-                                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                                    <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                         <td className="px-4 py-3 text-gray-500">{i + 1}</td>
-                                        <td className="px-4 py-3 font-medium text-blue-100">{s.name}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-white">{s.leads}</td>
+                                        <td className="px-4 py-3 font-medium text-blue-600 dark:text-blue-100">{s.name}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">{s.leads}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -310,13 +315,13 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 {/* Row 5: Term & Content */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* UTM Term Table */}
-                    <Card className="overflow-hidden !p-0 bg-[#1e1b4b] border-purple-900/30">
-                        <div className="p-4 border-b border-white/5 bg-purple-900/20">
-                            <h3 className="text-base font-semibold text-white">Captação - UTM TERM</h3>
+                    <Card className="overflow-hidden !p-0 bg-white dark:bg-[#1e1b4b] border-gray-200 dark:border-purple-900/30">
+                        <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-purple-50 dark:bg-purple-900/20">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Captação - UTM TERM</h3>
                         </div>
                         <div className="overflow-x-auto max-h-[400px]">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-white/5 text-gray-400 font-medium sticky top-0 backdrop-blur-md">
+                                <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 font-medium sticky top-0 backdrop-blur-md">
                                     <tr>
                                         <th className="px-4 py-3">Term</th>
                                         <th className="px-4 py-3 text-right">Leads</th>
@@ -324,9 +329,9 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {utmTerm?.map((s, i) => (
-                                        <tr key={i} className="hover:bg-white/5 transition-colors">
-                                            <td className="px-4 py-3 font-medium text-purple-100 truncate max-w-[200px]" title={s.name}>{s.name}</td>
-                                            <td className="px-4 py-3 text-right font-bold text-white">{s.leads}</td>
+                                        <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-purple-700 dark:text-purple-100 truncate max-w-[200px]" title={s.name}>{s.name}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">{s.leads}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -335,9 +340,9 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                     </Card>
 
                     {/* UTM Content (Ad Name) Chart */}
-                    <Card className="flex flex-col min-h-[400px] bg-[#172554] border-blue-800/30">
-                        <div className="p-4 border-b border-white/5 bg-blue-800/20">
-                            <h3 className="text-base font-semibold text-white">Captação - UTM CONTENT / AD NAME</h3>
+                    <Card className="flex flex-col min-h-[400px] bg-white dark:bg-[#172554] border-gray-200 dark:border-blue-800/30">
+                        <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-blue-50 dark:bg-blue-800/20">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Captação - UTM CONTENT / AD NAME</h3>
                         </div>
                         <div className="flex-1 flex items-center justify-center p-4">
                             <ResponsiveContainer width="100%" height="100%">
@@ -359,7 +364,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
                                         itemStyle={{ color: '#fff' }}
-                                        formatter={(value: number, name: string) => [value, name]}
+                                        formatter={(value: number | undefined, name: string | undefined) => [value || 0, name || '']}
                                     />
                                     <Legend
                                         layout="vertical"

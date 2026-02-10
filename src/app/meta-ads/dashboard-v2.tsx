@@ -73,9 +73,14 @@ type DashboardProps = {
 };
 
 // --- Components ---
+const MetaIcon = () => (
+    <svg className="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2.04c-5.5 0-10 4.49-10 10.02c0 5.01 3.69 9.12 8.52 9.88v-6.99H7.99v-2.89h2.53V9.41c0-2.5 1.49-3.89 3.77-3.89c1.09 0 2.23.19 2.23.19v2.47h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.45 2.89h-2.33v6.98C18.31 20.61 22 16.5 22 11.48c0-5.53-4.5-10.02-10-10.02z" />
+    </svg>
+);
 
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-    <div className={`bg-[#0f111a] rounded-2xl border border-gray-800/50 p-6 shadow-xl ${className}`}>
+    <div className={`bg-white dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-6 shadow-sm dark:shadow-xl ${className}`}>
         {children}
     </div>
 );
@@ -98,11 +103,11 @@ const MetricCard = ({
     trend?: number;
 }) => {
     return (
-        <Card className="relative overflow-hidden group !p-5 bg-gradient-to-br from-[#12141f] to-[#1a1d2d] border-gray-800">
+        <Card className="relative overflow-hidden group !p-5 bg-white dark:bg-gradient-to-br dark:from-[#12141f] dark:to-[#1a1d2d] border-gray-200 dark:border-gray-800">
             <div className="flex justify-between items-start z-10 relative mb-4">
                 <div>
-                    <h3 className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">{title}</h3>
-                    <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
+                    <h3 className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">{title}</h3>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</div>
                     {subValue && (
                         <div className="flex items-center gap-1 mt-1 text-xs">
                             <span className={`${trend && trend > 0 ? 'text-green-400' : 'text-red-400'} flex items-center font-medium`}>
@@ -241,11 +246,11 @@ const TrafficFunnel = ({
     const formatUncertain = (val: number) => val === 0 ? "0" : new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(val);
 
     return (
-        <Card className="h-full bg-[#0f111a] border-gray-800 relative overflow-visible flex flex-col justify-between">
+        <Card className="h-full bg-white dark:bg-[#0f111a] border-gray-200 dark:border-gray-800 relative overflow-visible flex flex-col justify-between">
 
             {/* Title Layer */}
             <div className="absolute top-6 left-0 right-0 z-20 flex justify-center pointer-events-none">
-                <h3 className="text-lg font-semibold text-gray-200 tracking-tight">Funil de Tráfego</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 tracking-tight">Funil de Tráfego</h3>
             </div>
             {/* Refresh Icon Mock Removed */}
 
@@ -293,20 +298,20 @@ const TrafficFunnel = ({
                 {/* Metrics List (Right Side) */}
                 <div className="absolute right-4 top-16 bottom-20 flex flex-col justify-between py-4 text-right z-20">
                     <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">CPM Médio</div>
-                        <div className="text-xl font-bold text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cpm || 0)}</div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest">CPM Médio</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cpm || 0)}</div>
                     </div>
                     <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Cliques</div>
-                        <div className="text-xl font-bold text-white">{ctr.toFixed(2)}%</div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest">Taxa de Cliques</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">{ctr.toFixed(2)}%</div>
                     </div>
                     <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Connect Rate</div>
-                        <div className="text-xl font-bold text-white">{connectRate.toFixed(2)}%</div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest">Connect Rate</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">{connectRate.toFixed(2)}%</div>
                     </div>
                     <div className="flex flex-col items-end">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">Taxa de Conversão</div>
-                        <div className="text-xl font-bold text-white">{conversionRate.toFixed(2)}%</div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest">Taxa de Conversão</div>
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">{conversionRate.toFixed(2)}%</div>
                     </div>
                 </div>
 
@@ -332,24 +337,24 @@ const MainChart = ({ data, label = 'Compras' }: { data: DailyMetric[], label?: s
         <Card className="h-full min-h-[400px]">
             <div className="flex justify-between items-center mb-6 pl-2">
                 <div className="flex flex-col">
-                    <h3 className="text-3xl font-bold text-white mb-1">
+                    <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
                         {totalValue.toLocaleString()}
                     </h3>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs uppercase tracking-wide text-gray-400">Total {valueName}</span>
+                        <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total {valueName}</span>
                         {/* Placeholder trend for now */}
-                        <span className="text-xs text-green-400 bg-green-900/30 px-1.5 py-0.5 rounded ml-2">▲ 22.4%</span>
+                        <span className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded ml-2">▲ 22.4%</span>
                     </div>
                 </div>
 
                 <div className="flex gap-6 pr-4">
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" style={{ backgroundColor: mainColor, boxShadow: `0 0 10px ${mainColor}80` }}></span>
-                        <span className="text-sm text-gray-300">{valueName}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{valueName}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                        <span className="text-sm text-gray-300">{moneyName}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{moneyName}</span>
                     </div>
                 </div>
             </div>
@@ -453,8 +458,8 @@ const getHeatmapStyle = (value: number, min: number, max: number, inverse = fals
 
     // We return a style object directly
     if (ratio < 0.2) return {};
-    if (ratio < 0.5) return { backgroundColor: 'rgba(59, 130, 246, 0.15)', color: 'white' }; // Blue 500 at 15%
-    if (ratio < 0.8) return { backgroundColor: 'rgba(59, 130, 246, 0.30)', color: 'white' }; // Blue 500 at 30%
+    if (ratio < 0.5) return { backgroundColor: 'rgba(59, 130, 246, 0.15)', color: 'var(--tw-prose-body)' }; // Blue 500 at 15%
+    if (ratio < 0.8) return { backgroundColor: 'rgba(59, 130, 246, 0.30)', color: 'var(--tw-prose-body)' }; // Blue 500 at 30%
     return { backgroundColor: 'rgba(59, 130, 246, 0.50)', color: 'white', fontWeight: 'bold' }; // Blue 500 at 50%
 };
 
@@ -516,12 +521,15 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
 
 
     return (
-        <div className="min-h-screen bg-[#050505] text-gray-200 p-6 md:p-8 space-y-6 font-sans">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#050505] text-gray-900 dark:text-gray-200 p-6 md:p-8 space-y-6 font-sans">
             {/* Header with Title and Date Controls */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight">Visão Geral</h2>
-                    <p className="text-gray-500 text-sm mt-1">Acompanhe seus indicadores de performance</p>
+                <div className="flex items-center gap-4">
+                    <MetaIcon />
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Visão Geral</h2>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Acompanhe seus indicadores de performance</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
@@ -672,44 +680,44 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
             {/* Bottom Section: Table & Pie */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Table (2 cols) */}
-                <Card className="lg:col-span-2 overflow-hidden !p-0 border-gray-800">
-                    <div className="p-4 border-b border-gray-800 bg-[#12141f] flex justify-between items-center">
+                <Card className="lg:col-span-2 overflow-hidden !p-0 border-gray-200 dark:border-gray-800">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#12141f] flex justify-between items-center">
                         <div className="flex gap-4 text-sm font-medium">
                             <button
                                 onClick={() => setActiveTab('campaigns')}
-                                className={`pb-4 -mb-4 transition-colors ${activeTab === 'campaigns' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
+                                className={`pb-4 -mb-4 transition-colors ${activeTab === 'campaigns' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-white dark:border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                             >
                                 Campanhas
                             </button>
                             <button
                                 onClick={() => setActiveTab('ads')}
-                                className={`pb-4 -mb-4 transition-colors ${activeTab === 'ads' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'}`}
+                                className={`pb-4 -mb-4 transition-colors ${activeTab === 'ads' ? 'text-blue-600 border-b-2 border-blue-600 dark:text-white dark:border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                             >
                                 Anúncios
                             </button>
                         </div>
-                        <HelpCircle size={16} className="text-gray-600" />
+                        <HelpCircle size={16} className="text-gray-400" />
                     </div>
                     <div className="overflow-x-auto max-h-[500px]">
                         <table className="w-full text-left relative border-collapse">
-                            <thead className="bg-[#0f111a] sticky top-0 z-10 shadow-md">
-                                <tr className="text-gray-400 text-[11px] uppercase tracking-wider">
-                                    <th className="px-4 py-3 font-medium w-6 bg-[#0f111a]">#</th>
-                                    <th className="px-4 py-3 font-medium bg-[#0f111a]">Nome</th>
+                            <thead className="bg-gray-50 dark:bg-[#0f111a] sticky top-0 z-10 shadow-md">
+                                <tr className="text-gray-500 dark:text-gray-400 text-[11px] uppercase tracking-wider">
+                                    <th className="px-4 py-3 font-medium w-6 bg-gray-50 dark:bg-[#0f111a]">#</th>
+                                    <th className="px-4 py-3 font-medium bg-gray-50 dark:bg-[#0f111a]">Nome</th>
                                     {activeTab === 'campaigns' && isCapture && (
-                                        <th className="px-4 py-3 font-medium bg-[#0f111a]">Melhor Anúncio</th>
+                                        <th className="px-4 py-3 font-medium bg-gray-50 dark:bg-[#0f111a]">Melhor Anúncio</th>
                                     )}
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Investimento</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Impressões</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Cliques</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">CTR</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">Pg Views</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'Leads' : 'Compras'}</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'CPL' : 'CPA'}</th>
-                                    <th className="px-4 py-3 text-right font-medium text-gray-400 uppercase tracking-wider">{isCapture ? 'CTR (L)' : 'ROAS'}</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Investimento</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Impressões</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cliques</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">CTR</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pg Views</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{isCapture ? 'Leads' : 'Compras'}</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{isCapture ? 'CPL' : 'CPA'}</th>
+                                    <th className="px-4 py-3 text-right font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{isCapture ? 'CTR (L)' : 'ROAS'}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-800/50 text-sm">
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-800/50 text-sm">
                                 {tableData.map((item, i) => {
                                     // Use type-safe properties now that CampaignMetric has them
                                     const resultVal = isCapture ? item.leads || 0 : item.conversions;
@@ -746,39 +754,39 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                                     }
 
                                     return (
-                                        <tr key={i} className="hover:bg-blue-500/5 transition-colors cursor-pointer group border-b border-gray-800/30">
+                                        <tr key={i} className="hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-colors cursor-pointer group border-b border-gray-100 dark:border-gray-800/30">
                                             <td className="px-4 py-3 text-gray-500 text-xs">{i + 1}.</td>
-                                            <td className="px-4 py-3 font-medium text-white max-w-[200px] truncate group-hover:text-blue-400 transition-colors" title={(activeTab === 'ads' && item.adName) ? item.adName : item.name}>
+                                            <td className="px-4 py-3 font-medium text-gray-900 dark:text-white max-w-[200px] truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={(activeTab === 'ads' && item.adName) ? item.adName : item.name}>
                                                 {(activeTab === 'ads' && item.adName) ? item.adName : item.name}
                                             </td>
                                             {activeTab === 'campaigns' && isCapture && (
-                                                <td className="px-4 py-3 text-gray-400 text-xs italic truncate max-w-[150px]" title={bestAdName}>
+                                                <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs italic truncate max-w-[150px]" title={bestAdName}>
                                                     {bestAdName}
                                                 </td>
                                             )}
-                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.spend, minSpend, maxSpend)}>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-700 dark:text-gray-300" style={getHeatmapStyle(item.spend, minSpend, maxSpend)}>
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.spend)}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.impressions, 0, 0)}>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-700 dark:text-gray-300" style={getHeatmapStyle(item.impressions, 0, 0)}>
                                                 {new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(item.impressions)}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.clicks, 0, 0)}>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-700 dark:text-gray-300" style={getHeatmapStyle(item.clicks, 0, 0)}>
                                                 {new Intl.NumberFormat('pt-BR', { notation: "compact" }).format(item.clicks)}
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle(item.ctr, 0, 0)}>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-700 dark:text-gray-300" style={getHeatmapStyle(item.ctr, 0, 0)}>
                                                 {item.ctr.toFixed(2)}%
                                             </td>
                                             {/* Page Views Column - New */}
-                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-300" style={getHeatmapStyle((item as any).landingPageViews || 0, 0, 0)}>
+                                            <td className="px-4 py-3 text-right font-mono text-xs text-gray-700 dark:text-gray-300" style={getHeatmapStyle((item as any).landingPageViews || 0, 0, 0)}>
                                                 {new Intl.NumberFormat('pt-BR', { notation: "compact" }).format((item as any).landingPageViews || 0)}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-gray-300 font-bold" style={getHeatmapStyle(resultVal, minResults, maxResults)}>
+                                            <td className="px-4 py-3 text-right text-gray-900 dark:text-gray-300 font-bold" style={getHeatmapStyle(resultVal, minResults, maxResults)}>
                                                 {resultVal}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-gray-300 text-xs" style={getHeatmapStyle(costVal, minCost, maxCost, true)}>
+                                            <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300 text-xs" style={getHeatmapStyle(costVal, minCost, maxCost, true)}>
                                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(costVal)}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-gray-300" style={getHeatmapStyle(finalVal, isCapture ? 0 : minRoas, isCapture ? 5 : maxRoas)}>
+                                            <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300" style={getHeatmapStyle(finalVal, isCapture ? 0 : minRoas, isCapture ? 5 : maxRoas)}>
                                                 {isCapture ? `${finalVal.toFixed(2)}%` : (
                                                     // For ROAS Color, we just use the heatmap style if it's high enough, effectively overriding the text color
                                                     // Or stick to the numeric coloring? Let's use the heatmap bg but keep the logic simple.
@@ -796,7 +804,7 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                 </Card>
 
                 {/* Best Ads Pie (1 col) */}
-                < Card className="border-gray-800" >
+                < Card className="border-gray-200 dark:border-gray-800" >
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="text-sm font-semibold text-gray-300">Melhores Anúncios (Conversões)</h3>
                     </div>
