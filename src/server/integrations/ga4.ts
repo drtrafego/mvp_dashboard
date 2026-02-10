@@ -1,14 +1,14 @@
 import { google } from 'googleapis';
 
 export async function getGA4Data(accessToken: string, propertyId: string, days = 30) {
-    // Standard Report for Campaign/Date (Backwards compatibility)
-    // Adapts the old 3-arg call to new 4+ arg signature
+    // Switch to Session Default Channel Group to capture ALL traffic (Direct, Organic, etc.)
+    // comparable to the "Channel Grouping" view in GA4 UI.
     return runReport(
         accessToken,
         propertyId,
         days,
         'today',
-        [{ name: 'date' }, { name: 'campaignName' }],
+        [{ name: 'date' }, { name: 'sessionDefaultChannelGroup' }],
         [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
     );
 }
