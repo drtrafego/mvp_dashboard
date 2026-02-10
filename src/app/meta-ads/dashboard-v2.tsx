@@ -5,9 +5,9 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell // Added Cell if used, or remove if not
 } from "recharts";
-import { HelpCircle, RefreshCw, RefreshCcw } from "lucide-react";
-import { DatePickerWithRange } from "../../components/ui/date-range-picker";
-import { Button } from "@/components/ui/button";
+import { HelpCircle, RefreshCw } from "lucide-react";
+
+
 import { toast } from "sonner";
 import { useTransition } from "react";
 import { syncMetaAds } from "@/server/actions/sync";
@@ -523,19 +523,15 @@ export default function MetaAdsDashboardV2({ totals, daily, campaigns, ads, mode
                     <h2 className="text-3xl font-bold text-white tracking-tight">Visão Geral</h2>
                     <p className="text-gray-500 text-sm mt-1">Acompanhe seus indicadores de performance</p>
                 </div>
-                <div className="flex items-center gap-3 bg-[#0f111a] p-1 rounded-lg border border-gray-800/50">
-                    <Button
+                <div className="flex items-center gap-3">
+                    <button
                         onClick={handleSync}
                         disabled={isPending}
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-400 hover:text-white"
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <RefreshCcw className={`w-4 h-4 mr-2 ${isPending ? "animate-spin" : ""}`} />
+                        <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
                         {isPending ? "Sincronizando..." : "Sincronizar Agora"}
-                    </Button>
-                    <div className="h-6 w-px bg-gray-800" />
-                    <DatePickerWithRange />
+                    </button>
                 </div>
             </div>
 
