@@ -333,7 +333,7 @@ export default function AnalyticsDashboard({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Weekly Bar Chart */}
-                        <Card className="flex flex-col min-h-[250px]">
+                        <Card className="flex flex-col min-h-[350px]">
                             <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-orange-500"></span>
                                 Acessos na Semana
@@ -350,10 +350,10 @@ export default function AnalyticsDashboard({
                         </Card>
 
                         {/* Traffic Sources List (Replaces Donut) */}
-                        <Card className="flex flex-col">
+                        <Card className="flex flex-col min-h-[350px]">
                             <h3 className="text-sm font-semibold text-white mb-4">Fontes de Tráfego</h3>
-                            <div className="flex-1 space-y-4 overflow-y-auto max-h-[200px] pr-2 scrollbar-thin scrollbar-thumb-gray-700">
-                                {sources.slice(0, 6).map((s, i) => (
+                            <div className="flex-1 space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700">
+                                {sources.slice(0, 8).map((s, i) => (
                                     <div key={i} className="space-y-1">
                                         <div className="flex items-center justify-between text-xs">
                                             <div className="flex items-center gap-2">
@@ -383,10 +383,10 @@ export default function AnalyticsDashboard({
             </div>
 
             {/* Bottom Row: OS | Device | URL */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[300px]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* OS Donut */}
-                <Card className="flex flex-col">
+                <Card className="flex flex-col min-h-[300px]">
                     <h3 className="text-sm font-semibold text-gray-300 mb-2">Sistema Operacional</h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
@@ -397,8 +397,8 @@ export default function AnalyticsDashboard({
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={50}
-                                    outerRadius={70}
+                                    innerRadius={60}
+                                    outerRadius={90}
                                     paddingAngle={2}
                                 >
                                     {osData.map((entry, index) => (
@@ -413,7 +413,7 @@ export default function AnalyticsDashboard({
                 </Card>
 
                 {/* Device Donut */}
-                <Card className="flex flex-col">
+                <Card className="flex flex-col min-h-[300px]">
                     <h3 className="text-sm font-semibold text-gray-300 mb-2">Dispositivo</h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
@@ -424,8 +424,8 @@ export default function AnalyticsDashboard({
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={50}
-                                    outerRadius={70}
+                                    innerRadius={60}
+                                    outerRadius={90}
                                     paddingAngle={2}
                                 >
                                     {deviceData.map((entry, index) => (
@@ -440,16 +440,23 @@ export default function AnalyticsDashboard({
                 </Card>
 
                 {/* URL Table */}
-                <Card className="!p-0 overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-gray-800 bg-[#12141f] flex justify-between items-center">
-                        <h3 className="text-sm font-semibold text-gray-300">Acessos por URL</h3>
-                        <Filter size={14} className="text-gray-500" />
+                <Card className="!p-0 overflow-hidden flex flex-col min-h-[300px] border-gray-800">
+                    <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] grid grid-cols-12 gap-2 items-center">
+                        <span className="col-span-8 text-xs font-bold text-gray-400 uppercase">Página (URL)</span>
+                        <span className="col-span-4 text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
                     </div>
-                    <div className="overflow-y-auto flex-1 p-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-700">
+                    <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
                         {pages.map((p, i) => (
-                            <div key={i} className="flex justify-between items-center px-3 py-2 text-xs hover:bg-white/5 rounded border border-transparent hover:border-gray-800 transition-colors">
-                                <span className="text-gray-400 truncate max-w-[70%]" title={p.path}>{p.path}</span>
-                                <span className="bg-orange-900/20 text-orange-500 px-2 py-0.5 rounded font-mono">{p.views}</span>
+                            <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-800/30 hover:bg-white/5 transition-colors items-center">
+                                <span className="col-span-8 text-gray-400 truncate" title={p.path}>
+                                    {p.path}
+                                </span>
+                                <div className="col-span-4 flex items-center justify-end gap-3">
+                                    <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden max-w-[60px]">
+                                        <div className="h-full bg-purple-500 rounded-full" style={{ width: `${Math.min(((p.views / (pages[0]?.views || 1)) * 100), 100)}%` }}></div>
+                                    </div>
+                                    <span className="text-white font-mono w-8 text-right">{p.views.toLocaleString()}</span>
+                                </div>
                             </div>
                         ))}
                     </div>
