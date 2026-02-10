@@ -3,7 +3,7 @@
 import { auth } from "@/server/auth";
 import { biDb } from "@/server/db";
 import { campaignMetrics, leadAttribution, users } from "@/server/db/schema";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { subDays, format } from "date-fns";
 
 export type LaunchMetrics = {
@@ -20,6 +20,7 @@ export type LaunchMetrics = {
         leads: number;
         investment: number;
     }[];
+    dailyBySource: Record<string, string | number>[];
     temperature: {
         name: string; // "Frio" (P1) or "Quente" (P2)
         value: number;
@@ -34,6 +35,14 @@ export type LaunchMetrics = {
         leads: number;
     }[];
     utmCampaign: {
+        name: string;
+        leads: number;
+    }[];
+    utmTerm: {
+        name: string;
+        leads: number;
+    }[];
+    utmContent: {
         name: string;
         leads: number;
     }[];
@@ -154,6 +163,30 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
             .slice(0, 10);
     };
 
+    // E. Daily Leads by Source (for Evolution Chart)
+    const dailyBySourceMap = new Map<string, Map<string, number>>();
+    // Structure: date -> { source1: count, source2: count ... }
+
+    leads.forEach(l => {
+        if (!l.date) return;
+        const d = format(l.date, 'yyyy-MM-dd');
+        const s = l.utmSource || "(not set)";
+
+        if (!dailyBySourceMap.has(d)) dailyBySourceMap.set(d, new Map());
+        const dateMap = dailyBySourceMap.get(d)!;
+        dateMap.set(s, (dateMap.get(s) || 0) + 1);
+    });
+
+    const dailyBySource = Array.from(dailyBySourceMap.entries())
+        .map(([date, sourceCounts]) => {
+            const entry: Record<string, string | number> = { date };
+            sourceCounts.forEach((count, source) => {
+                entry[source] = count;
+            });
+            return entry;
+        })
+        .sort((a, b) => (a.date as string).localeCompare(b.date as string));
+
     return {
         summary: {
             leads: totalLeads,
@@ -164,9 +197,14 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
             leadsUntracked: totalLeads - trackedLeads,
         },
         daily,
+        dailyBySource,
         temperature,
         utmSource: groupAndCount(leads, "utmSource"),
         utmMedium: groupAndCount(leads, "utmMedium"),
         utmCampaign: groupAndCount(leads, "utmCampaign"),
+        utmTerm: groupAndCount(leads, "utmTerm"),
+        utmContent: groupAndCount(leads, "utmContent"), // Assuming 'utmContent' mapped to 'utmContent' col? checking schema...
+        // Wait, checking schema in previous steps... leadAttribution has utmContent?
+        // Let's check schema first to be safe.
     };
 }

@@ -1,11 +1,9 @@
-"use client";
-
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, Cell, PieChart, Pie, Legend, ComposedChart, Line
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    BarChart, Bar, Cell, PieChart, Pie, Legend, Line, LineChart
 } from "recharts";
-import { ArrowDown, ArrowUp, Filter, RefreshCw, Thermometer } from "lucide-react";
+import { Thermometer } from "lucide-react";
 import { LaunchMetrics } from "@/server/actions/launch-dashboard";
 
 type DashboardLaunchProps = {
@@ -53,10 +51,24 @@ const KPICard = ({
 
 
 export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
-    const { summary, daily, temperature, utmSource, utmMedium, utmCampaign } = metrics;
+    const { summary, daily, dailyBySource, temperature, utmSource, utmMedium, utmTerm, utmContent } = metrics;
 
     // Safety for charts
     const safeDaily = daily.length > 0 ? daily : [{ date: new Date().toISOString().split('T')[0], leads: 0, investment: 0 }];
+
+    // Get unique sources for the line chart colors
+    const uniqueSources = useMemo(() => {
+        const sources = new Set<string>();
+        dailyBySource?.forEach(d => {
+            Object.keys(d).forEach(k => {
+                if (k !== 'date') sources.add(k);
+            });
+        });
+        return Array.from(sources);
+    }, [dailyBySource]);
+
+    // Color palette for sources
+    const colors = ["#8b5cf6", "#ec4899", "#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#6366f1", "#14b8a6"];
 
     return (
         <div className="space-y-6">
@@ -65,7 +77,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                     <span className="text-4xl">🚀</span>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight text-white">Dashboard Lançamento</h1>
+                            <h1 className="text-2xl font-bold tracking-tight text-white">Dashboard Captação</h1>
                         </div>
                         <div className="mt-1">
                             <p className="text-sm text-gray-500">Monitoramento de leads e temperatura em tempo real.</p>
@@ -101,14 +113,14 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 />
             </div>
 
-            {/* Row 2: Temperature & Survey Overview */}
+            {/* Row 2: Charts Area (Temperature + Daily Evolution) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
                 {/* Temperature Chart (4 cols) */}
-                <Card className="lg:col-span-4 flex flex-col min-h-[350px]">
+                <Card className="lg:col-span-4 flex flex-col min-h-[400px]">
                     <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
                         <Thermometer size={16} className="text-red-400" />
-                        Temperatura dos Leads
+                        Temperatura + Pesquisa (Visão Geral)
                     </h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
@@ -144,54 +156,48 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                     </div>
                 </Card>
 
-                {/* Survey Helper (Placeholder for future Sheets integration) (4 cols) */}
-                <Card className="lg:col-span-4 flex flex-col min-h-[350px] bg-gradient-to-b from-[#0f111a] to-[#161922]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Pesquisa de Perfil (Google Sheets)</h3>
-                    <div className="flex-1 flex flex-col items-center justify-center text-center gap-4 p-4 border-2 border-dashed border-gray-800 rounded-xl">
-                        <div className="w-12 h-12 bg-green-900/20 rounded-full flex items-center justify-center text-green-500 font-bold text-xl">
-                            XLS
-                        </div>
-                        <div>
-                            <p className="text-gray-300 font-medium">Integração Em Breve</p>
-                            <p className="text-xs text-xs text-gray-500 mt-1 max-w-[200px]">
-                                Conecte sua planilha para visualizar dados demográficos da pesquisa.
-                            </p>
-                        </div>
-                        <button className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 rounded-lg transition-colors border border-gray-700">
-                            Conectar Planilha
-                        </button>
-                    </div>
-                </Card>
-
-                {/* Top UTM Sources List (4 cols) */}
-                <Card className="lg:col-span-4 flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Top Origens (UTM Source)</h3>
-                    <div className="flex-1 space-y-3 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700">
-                        {utmSource.map((s, i) => (
-                            <div key={i} className="space-y-1">
-                                <div className="flex items-center justify-between text-xs">
-                                    <span className="text-gray-300 font-medium truncate max-w-[150px]" title={s.name || "(not set)"}>{s.name || "(not set)"}</span>
-                                    <span className="text-gray-400 font-mono">{s.leads}</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-blue-500/80 rounded-full"
-                                        style={{ width: `${Math.min(((s.leads / (utmSource[0]?.leads || 1)) * 100), 100)}%` }}
+                {/* Daily Leads by Source - Evolution (8 cols) */}
+                <Card className="lg:col-span-8 flex flex-col min-h-[400px] bg-[#1a1d2e] border-indigo-900/30">
+                    <h3 className="text-sm font-semibold text-white mb-4 pl-2">Captação - UTM SOURCE (Evolução Diária)</h3>
+                    <div className="flex-1 w-full min-h-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={dailyBySource || []}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3b" vertical={false} />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#6b7280"
+                                    fontSize={10}
+                                    tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <YAxis stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
+                                    labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
+                                />
+                                <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                                {uniqueSources.map((source, index) => (
+                                    <Line
+                                        key={source}
+                                        type="monotone"
+                                        dataKey={source}
+                                        stroke={colors[index % colors.length]}
+                                        strokeWidth={2}
+                                        dot={{ r: 3, fill: colors[index % colors.length] }}
+                                        activeDot={{ r: 5 }}
                                     />
-                                </div>
-                            </div>
-                        ))}
+                                ))}
+                            </LineChart>
+                        </ResponsiveContainer>
                     </div>
                 </Card>
-
             </div>
 
-            {/* Row 3: Daily Charts */}
+            {/* Row 3: Daily Bars (Leads & Investment) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                {/* Daily Leads Bar Chart */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Leads por Dia</h3>
+                    <h3 className="text-sm font-semibold text-white mb-4">Leads por Dia (Barras)</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={safeDaily}>
@@ -216,9 +222,8 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                     </div>
                 </Card>
 
-                {/* Daily Investment Bar Chart */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Investimento por Dia</h3>
+                    <h3 className="text-sm font-semibold text-white mb-4">Investimento por Dia (Barras)</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={safeDaily}>
@@ -243,6 +248,130 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                         </ResponsiveContainer>
                     </div>
                 </Card>
+            </div>
+
+            {/* Row 4: Detailed Tables */}
+            <div className="space-y-6">
+
+                {/* UTM Source Table */}
+                <Card className="overflow-hidden !p-0 bg-[#1a1d2e] border-indigo-900/30">
+                    <div className="p-4 border-b border-white/5 bg-white/5">
+                        <h3 className="text-base font-semibold text-white">Utm Source</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-white/5 text-gray-400 font-medium">
+                                <tr>
+                                    <th className="px-4 py-3">#</th>
+                                    <th className="px-4 py-3 w-full">Source</th>
+                                    <th className="px-4 py-3 text-right">Leads</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {utmSource.map((s, i) => (
+                                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                                        <td className="px-4 py-3 text-gray-500">{i + 1}</td>
+                                        <td className="px-4 py-3 font-medium text-white">{s.name}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-white">{s.leads}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+
+                {/* UTM Medium Table */}
+                <Card className="overflow-hidden !p-0 bg-[#0f172a] border-blue-900/30">
+                    <div className="p-4 border-b border-white/5 bg-blue-900/20">
+                        <h3 className="text-base font-semibold text-white">UTM MEDIUM</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-white/5 text-gray-400 font-medium">
+                                <tr>
+                                    <th className="px-4 py-3">#</th>
+                                    <th className="px-4 py-3 w-full">Medium</th>
+                                    <th className="px-4 py-3 text-right">Leads</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {utmMedium.map((s, i) => (
+                                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                                        <td className="px-4 py-3 text-gray-500">{i + 1}</td>
+                                        <td className="px-4 py-3 font-medium text-blue-100">{s.name}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-white">{s.leads}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+
+                {/* Row 5: Term & Content */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* UTM Term Table */}
+                    <Card className="overflow-hidden !p-0 bg-[#1e1b4b] border-purple-900/30">
+                        <div className="p-4 border-b border-white/5 bg-purple-900/20">
+                            <h3 className="text-base font-semibold text-white">Captação - UTM TERM</h3>
+                        </div>
+                        <div className="overflow-x-auto max-h-[400px]">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-white/5 text-gray-400 font-medium sticky top-0 backdrop-blur-md">
+                                    <tr>
+                                        <th className="px-4 py-3">Term</th>
+                                        <th className="px-4 py-3 text-right">Leads</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {utmTerm?.map((s, i) => (
+                                        <tr key={i} className="hover:bg-white/5 transition-colors">
+                                            <td className="px-4 py-3 font-medium text-purple-100 truncate max-w-[200px]" title={s.name}>{s.name}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-white">{s.leads}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+
+                    {/* UTM Content (Ad Name) Chart */}
+                    <Card className="flex flex-col min-h-[400px] bg-[#172554] border-blue-800/30">
+                        <div className="p-4 border-b border-white/5 bg-blue-800/20">
+                            <h3 className="text-base font-semibold text-white">Captação - UTM CONTENT / AD NAME</h3>
+                        </div>
+                        <div className="flex-1 flex items-center justify-center p-4">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={utmContent || []}
+                                        dataKey="leads"
+                                        nameKey="name"
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius="50%"
+                                        outerRadius="80%"
+                                        paddingAngle={2}
+                                    >
+                                        {(utmContent || []).map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="rgba(255,255,255,0.1)" />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
+                                        itemStyle={{ color: '#fff' }}
+                                        formatter={(value: number, name: string) => [value, name]}
+                                    />
+                                    <Legend
+                                        layout="vertical"
+                                        verticalAlign="middle"
+                                        align="right"
+                                        wrapperStyle={{ fontSize: '11px', color: '#cbd5e1', maxWidth: '150px' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </Card>
+                </div>
 
             </div>
 

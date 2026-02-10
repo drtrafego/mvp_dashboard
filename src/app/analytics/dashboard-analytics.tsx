@@ -3,10 +3,11 @@
 
 import { useMemo, useState } from "react";
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
     BarChart, Bar, Cell, PieChart, Pie, Legend
 } from "recharts";
-import { ArrowDown, Filter, RefreshCw } from "lucide-react";
+import { ArrowDown, ArrowUp, Filter, RefreshCw, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // --- Types ---
 type DailyAnalytics = {
@@ -62,7 +63,7 @@ type AnalyticsDashboardProps = {
 // --- Components ---
 
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-    <div className={`bg-[#0f111a] rounded-2xl border border-gray-800/50 p-6 shadow-xl ${className}`}>
+    <div className={`bg-white dark:bg-[#0f111a] rounded-2xl border border-gray-200 dark:border-gray-800/50 p-6 shadow-sm dark:shadow-xl ${className}`}>
         {children}
     </div>
 );
@@ -74,7 +75,8 @@ const KPICard = ({
     chartData,
     dataKey,
     color,
-    trend
+    trend,
+    tooltipText
 }: {
     title: string;
     value: string;
@@ -83,16 +85,31 @@ const KPICard = ({
     dataKey: keyof DailyAnalytics;
     color: string;
     trend?: number;
+    tooltipText?: string;
 }) => {
     return (
-        <Card className="relative overflow-hidden group !p-5 bg-gradient-to-br from-[#12141f] to-[#1a1d2d] border-gray-800">
+        <Card className="relative overflow-hidden group !p-5 bg-white dark:bg-gradient-to-br dark:from-[#12141f] dark:to-[#1a1d2d] border-gray-200 dark:border-gray-800">
             <div className="flex justify-between items-start z-10 relative mb-4">
                 <div>
-                    <h3 className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">{title}</h3>
-                    <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
+                    <h3 className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-1">
+                        {title}
+                        {tooltipText && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <HelpCircle size={12} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-help" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className="max-w-xs text-xs">{tooltipText}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
+                    </h3>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{value}</div>
                     {subValue && (
                         <div className="flex items-center gap-1 mt-1 text-xs">
-                            <span className={`${trend && trend > 0 ? 'text-green-400' : 'text-red-400'} flex items-center font-medium`}>
+                            <span className={`${trend && trend > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} flex items-center font-medium`}>
                                 {trend && trend > 0 ? '↑' : '↓'} {subValue}
                             </span>
                         </div>
@@ -101,7 +118,7 @@ const KPICard = ({
             </div>
 
             {/* Sparkline Area */}
-            <div className="h-12 w-full mt-2">
+            <div className="h-12 w-full mt-2 opacity-50 dark:opacity-100">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                         <defs>
@@ -132,7 +149,12 @@ const KPICard = ({
 import { syncGA4 } from "@/server/actions/sync-google";
 import { BrazilHeatMap } from "@/components/analytics/BrazilHeatMap";
 
-// ... (existing imports)
+// Icons
+const AnalyticsIcon = () => (
+    <svg className="w-8 h-8 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+    </svg>
+);
 
 export default function AnalyticsDashboard({
     totals,
@@ -149,6 +171,10 @@ export default function AnalyticsDashboard({
     interestData = []
 }: AnalyticsDashboardProps) {
     const [isSyncing, setIsSyncing] = useState(false);
+
+    // Sorting States
+    const [citySort, setCitySort] = useState<'asc' | 'desc'>('desc');
+    const [pageSort, setPageSort] = useState<'asc' | 'desc'>('desc');
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -176,19 +202,32 @@ export default function AnalyticsDashboard({
     const sortedDeviceData = [...deviceData].sort((a, b) => b.value - a.value);
     const sortedBrowserData = [...browserData].sort((a, b) => b.value - a.value);
 
+    // Sorted Tables Logic
+    const sortedCityData = useMemo(() => {
+        return [...(cityData || [])].sort((a, b) => {
+            return citySort === 'asc' ? a.value - b.value : b.value - a.value;
+        });
+    }, [cityData, citySort]);
+
+    const sortedPageData = useMemo(() => {
+        return [...pages].sort((a, b) => {
+            return pageSort === 'asc' ? a.views - b.views : b.views - a.views;
+        });
+    }, [pages, pageSort]);
+
     return (
-        <div className="min-h-screen bg-[#050505] text-gray-200 p-6 md:p-8 space-y-6 font-sans">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#050505] text-gray-900 dark:text-gray-200 p-6 md:p-8 space-y-6 font-sans transition-colors duration-300">
 
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
                 <div className="flex items-center gap-4">
-                    <span className="text-4xl">📊</span>
+                    <AnalyticsIcon />
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight text-white">Analytics</h1>
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Analytics</h1>
                         </div>
                         <div className="mt-1">
-                            <p className="text-sm text-gray-500">Visão geral do tráfego e engajamento.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Visão geral do tráfego e engajamento.</p>
                         </div>
                     </div>
                 </div>
@@ -197,7 +236,7 @@ export default function AnalyticsDashboard({
                     <button
                         onClick={handleSync}
                         disabled={isSyncing}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                     >
                         <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
                         {isSyncing ? "Sincronizando..." : "Sincronizar Agora"}
@@ -215,6 +254,7 @@ export default function AnalyticsDashboard({
                     chartData={safeDaily}
                     dataKey="sessions"
                     color="#22c55e"
+                    tooltipText="Número total de visitas ao site (sessões). Uma sessão expira após 30 minutos de inatividade."
                 />
                 <KPICard
                     title="Usuários Totais"
@@ -224,6 +264,7 @@ export default function AnalyticsDashboard({
                     chartData={safeDaily}
                     dataKey="users"
                     color="#3b82f6"
+                    tooltipText="Número total de visitantes únicos que acessaram o site no período."
                 />
                 <KPICard
                     title="Novos Usuários"
@@ -233,6 +274,7 @@ export default function AnalyticsDashboard({
                     chartData={safeDaily}
                     dataKey="users" // Proxy
                     color="#ef4444"
+                    tooltipText="Número de visitantes que acessaram o site pela primeira vez."
                 />
                 <KPICard
                     title="Visualizações"
@@ -242,6 +284,7 @@ export default function AnalyticsDashboard({
                     chartData={safeDaily}
                     dataKey="sessions" // Proxy
                     color="#eab308"
+                    tooltipText="Número total de páginas visualizadas (Pageviews). Inclui visualizações repetidas."
                 />
                 <KPICard
                     title="Taxa de Engajamento"
@@ -251,6 +294,7 @@ export default function AnalyticsDashboard({
                     chartData={safeDaily}
                     dataKey="engagementRate"
                     color="#a855f7"
+                    tooltipText="Porcentagem de sessões com interação significativa (mais de 10s, conversão ou 2+ páginas)."
                 />
             </div>
 
@@ -260,40 +304,49 @@ export default function AnalyticsDashboard({
                 {/* Left: Map & Table (4 cols) */}
                 <div className="lg:col-span-4 flex flex-col gap-6">
                     {/* Map Card */}
-                    <Card className="min-h-[400px] relative p-0 overflow-hidden flex items-center justify-center bg-[#0f111a] border-gray-800">
+                    <Card className="min-h-[400px] relative p-0 overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-[#0f111a] border-gray-200 dark:border-gray-800">
                         <BrazilHeatMap data={regionData || []} className="p-4 w-full h-full" />
                         <div className="absolute top-4 left-4 pointer-events-none">
-                            <h3 className="text-sm font-semibold text-white">Geografia</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Geografia</h3>
                         </div>
                     </Card>
 
                     {/* Region Table (Below Map) */}
-                    <Card className="h-[300px] !p-0 overflow-hidden border-gray-800 flex flex-col">
-                        <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] grid grid-cols-12 gap-2 items-center">
-                            <span className="col-span-4 text-xs font-bold text-gray-400 uppercase">Região</span>
-                            <span className="col-span-4 text-xs font-bold text-gray-400 uppercase">Cidade</span>
-                            <span className="col-span-4 text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
+                    <Card className="h-[300px] !p-0 overflow-hidden border-gray-200 dark:border-gray-800 flex flex-col">
+                        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#12141f] grid grid-cols-12 gap-2 items-center">
+                            <span className="col-span-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Região</span>
+                            <span className="col-span-4 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Cidade</span>
+                            <div
+                                className="col-span-4 flex items-center justify-end gap-1 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
+                                onClick={() => setCitySort(prev => prev === 'desc' ? 'asc' : 'desc')}
+                            >
+                                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase text-right">Acessos</span>
+                                {citySort === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />}
+                            </div>
                         </div>
-                        <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-                            {(cityData && cityData.length > 0 ? cityData : []).map((item: DimensionData, i: number) => (
-                                <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-800/30 hover:bg-white/5 transition-colors items-center">
-                                    <span className="col-span-4 text-gray-400 truncate" title={item.region || "N/A"}>
-                                        {item.region || "—"}
-                                    </span>
-                                    <span className="col-span-4 text-gray-200 truncate font-medium" title={item.name}>
-                                        {item.name}
-                                    </span>
-                                    <div className="col-span-4 flex items-center justify-end gap-3">
-                                        <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden max-w-[50px]">
-                                            <div
-                                                className="h-full bg-amber-500 rounded-full"
-                                                style={{ width: `${Math.min(((item.value / (cityData?.[0]?.value || 1)) * 100), 100)}%` }}
-                                            ></div>
+                        <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
+                            {sortedCityData.map((item, i) => {
+                                const relValue = (item.value / (sortedCityData[0]?.value || 1)) * 100;
+                                return (
+                                    <div key={i} className="relative grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-100 dark:border-gray-800/30 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors items-center">
+                                        {/* Heatmap Background */}
+                                        <div
+                                            className="absolute inset-0 bg-amber-500/10 dark:bg-amber-500/20 pointer-events-none transition-all duration-500"
+                                            style={{ width: `${relValue}%` }}
+                                        />
+
+                                        <span className="col-span-4 text-gray-600 dark:text-gray-400 truncate z-10" title={item.region || "N/A"}>
+                                            {item.region || "—"}
+                                        </span>
+                                        <span className="col-span-4 text-gray-800 dark:text-gray-200 truncate font-medium z-10" title={item.name}>
+                                            {item.name}
+                                        </span>
+                                        <div className="col-span-4 flex items-center justify-end gap-3 z-10">
+                                            <span className="text-gray-900 dark:text-white font-mono w-8 text-right font-bold">{item.value.toLocaleString()}</span>
                                         </div>
-                                        <span className="text-white font-mono w-8 text-right">{item.value.toLocaleString()}</span>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                             {(!cityData || cityData.length === 0) && (
                                 <div className="p-8 text-center text-gray-500 text-xs flex flex-col items-center gap-2">
                                     <span className="text-xl">🗺️</span>
@@ -309,7 +362,7 @@ export default function AnalyticsDashboard({
 
                     {/* Line Chart: Acessos no Período */}
                     <Card className="flex flex-col min-h-[350px]">
-                        <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
                             Acessos no Período
                         </h3>
@@ -322,19 +375,20 @@ export default function AnalyticsDashboard({
                                             <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2e3b" vertical={false} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} className="dark:stroke-gray-800" />
                                     <XAxis
                                         dataKey="date"
-                                        stroke="#6b7280"
+                                        stroke="#9ca3af"
                                         fontSize={10}
                                         tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                                         axisLine={false}
                                         tickLine={false}
                                     />
-                                    <YAxis stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
+                                    <YAxis stroke="#9ca3af" fontSize={10} axisLine={false} tickLine={false} />
+                                    <RechartsTooltip
+                                        contentStyle={{ backgroundColor: 'var(--tooltip-bg)', borderColor: 'var(--tooltip-border)', borderRadius: '8px', color: 'var(--tooltip-text)' }}
                                         labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                        wrapperClassName="custom-tooltip"
                                     />
                                     <Area type="monotone" dataKey="sessions" name="Sessões" stroke="#eab308" strokeWidth={2} fill="url(#gradSes)" />
                                 </AreaChart>
@@ -345,15 +399,15 @@ export default function AnalyticsDashboard({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Weekly Bar Chart */}
                         <Card className="flex flex-col min-h-[350px]">
-                            <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-full bg-orange-500"></span>
                                 Acessos na Semana
                             </h3>
                             <div className="flex-1 w-full min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={weekData}>
-                                        <XAxis dataKey="day" stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
-                                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }} />
+                                        <XAxis dataKey="day" stroke="#9ca3af" fontSize={10} axisLine={false} tickLine={false} />
+                                        <RechartsTooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }} />
                                         <Bar dataKey="value" name="Acessos" fill="#f97316" radius={[4, 4, 0, 0]} barSize={20} />
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -362,18 +416,18 @@ export default function AnalyticsDashboard({
 
                         {/* Traffic Sources List (Replaces Donut) */}
                         <Card className="flex flex-col min-h-[350px]">
-                            <h3 className="text-sm font-semibold text-white mb-4">Fontes de Tráfego</h3>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Fontes de Tráfego</h3>
                             <div className="flex-1 space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700">
                                 {sources.slice(0, 8).map((s, i) => (
                                     <div key={i} className="space-y-1">
                                         <div className="flex items-center justify-between text-xs">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: ['#f97316', '#ef4444', '#eab308', '#a855f7', '#3b82f6'][i % 5] }}></div>
-                                                <span className="text-gray-300 font-medium truncate max-w-[120px]" title={s.name}>{s.name}</span>
+                                                <span className="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[120px]" title={s.name}>{s.name}</span>
                                             </div>
-                                            <span className="text-gray-400">{s.sessions} ({s.percentage.toFixed(1)}%)</span>
+                                            <span className="text-gray-500 dark:text-gray-400">{s.sessions} ({s.percentage.toFixed(1)}%)</span>
                                         </div>
-                                        <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                                        <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                             <div
                                                 className="h-full rounded-full"
                                                 style={{
@@ -398,7 +452,7 @@ export default function AnalyticsDashboard({
 
                 {/* OS Horizontal Bar */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Sistema Operacional</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Sistema Operacional</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={sortedOsData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
@@ -411,7 +465,7 @@ export default function AnalyticsDashboard({
                                     axisLine={false}
                                     tickLine={false}
                                 />
-                                <Tooltip
+                                <RechartsTooltip
                                     cursor={{ fill: 'transparent' }}
                                     contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
                                 />
@@ -423,7 +477,7 @@ export default function AnalyticsDashboard({
 
                 {/* Browser Horizontal Bar */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Navegador</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Navegador</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart layout="vertical" data={sortedBrowserData.slice(0, 7)} margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
@@ -436,7 +490,7 @@ export default function AnalyticsDashboard({
                                     axisLine={false}
                                     tickLine={false}
                                 />
-                                <Tooltip
+                                <RechartsTooltip
                                     cursor={{ fill: 'transparent' }}
                                     contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', borderRadius: '8px', color: '#fff' }}
                                 />
@@ -448,7 +502,7 @@ export default function AnalyticsDashboard({
 
                 {/* Device Donut */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-2">Dispositivo</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Dispositivo</h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -467,7 +521,7 @@ export default function AnalyticsDashboard({
                                         <Cell key={`cell-${index}`} fill={entry.color || ['#ec4899', '#3b82f6', '#8b5cf6'][index % 3]} />
                                     ))}
                                 </Pie>
-                                <Tooltip
+                                <RechartsTooltip
                                     contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
                                 />
@@ -477,11 +531,6 @@ export default function AnalyticsDashboard({
                                     align="right"
                                     iconSize={10}
                                     wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
-                                    formatter={(value, entry: any) => (
-                                        <span className="text-gray-300 ml-1">
-                                            {value} <span className="text-gray-500">({entry.payload.value.toLocaleString()})</span>
-                                        </span>
-                                    )}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -489,34 +538,40 @@ export default function AnalyticsDashboard({
                 </Card>
 
                 {/* URL Table */}
-                <Card className="!p-0 overflow-hidden flex flex-col min-h-[350px] border-gray-800">
-                    <div className="px-4 py-3 border-b border-gray-800 bg-[#12141f] grid grid-cols-12 gap-2 items-center">
+                <Card className="!p-0 overflow-hidden flex flex-col min-h-[350px] border-gray-200 dark:border-gray-800">
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#12141f] grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-8 flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-400 uppercase">Página (URL)</span>
-                            <Filter size={12} className="text-gray-600 cursor-pointer hover:text-gray-300 transition-colors" />
+                            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Página (URL)</span>
+                            <Filter size={12} className="text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-gray-300 transition-colors" />
                         </div>
-                        <div className="col-span-4 flex items-center justify-end gap-2">
-                            <span className="text-xs font-bold text-gray-400 uppercase text-right">Acessos</span>
-                            <ArrowDown size={12} className="text-gray-600 cursor-pointer hover:text-gray-300 transition-colors" />
+                        <div
+                            className="col-span-4 flex items-center justify-end gap-2 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300"
+                            onClick={() => setPageSort(prev => prev === 'desc' ? 'asc' : 'desc')}
+                        >
+                            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase text-right">Acessos</span>
+                            {pageSort === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />}
                         </div>
                     </div>
-                    <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-                        {pages.map((p, i) => (
-                            <div key={i} className="grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-800/30 hover:bg-white/5 transition-colors items-center">
-                                <span className="col-span-8 text-gray-400 truncate font-medium" title={p.path}>
-                                    {p.path}
-                                </span>
-                                <div className="col-span-4 flex items-center justify-end gap-3">
-                                    <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden max-w-[60px]">
-                                        <div
-                                            className="h-full bg-purple-500 rounded-full"
-                                            style={{ width: `${Math.min(((p.views / (pages[0]?.views || 1)) * 100), 100)}%` }}
-                                        />
+                    <div className="overflow-y-auto flex-1 pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
+                        {sortedPageData.map((p, i) => {
+                            const relValue = (p.views / (sortedPageData[0]?.views || 1)) * 100;
+                            return (
+                                <div key={i} className="relative grid grid-cols-12 gap-2 px-4 py-2.5 text-xs border-b border-gray-100 dark:border-gray-800/30 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors items-center">
+                                    {/* Heatmap Background */}
+                                    <div
+                                        className="absolute inset-0 bg-purple-500/10 dark:bg-purple-500/20 pointer-events-none transition-all duration-500"
+                                        style={{ width: `${relValue}%` }}
+                                    />
+
+                                    <span className="col-span-8 text-gray-700 dark:text-gray-400 truncate font-medium z-10" title={p.path}>
+                                        {p.path}
+                                    </span>
+                                    <div className="col-span-4 flex items-center justify-end gap-3 z-10">
+                                        <span className="text-gray-900 dark:text-white font-mono w-8 text-right font-bold">{p.views.toLocaleString()}</span>
                                     </div>
-                                    <span className="text-white font-mono w-8 text-right">{p.views.toLocaleString()}</span>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {pages.length === 0 && (
                             <div className="p-8 text-center text-gray-500 text-xs">Nenhuma página acessada.</div>
                         )}
@@ -530,7 +585,7 @@ export default function AnalyticsDashboard({
 
                 {/* Gender Donut */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-2">Gênero</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Gênero</h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -549,7 +604,7 @@ export default function AnalyticsDashboard({
                                         <Cell key={`cell-${index}`} fill={['#3b82f6', '#ec4899', '#9ca3af', '#eab308'][index % 4]} />
                                     ))}
                                 </Pie>
-                                <Tooltip
+                                <RechartsTooltip
                                     contentStyle={{ backgroundColor: '#0f111a', borderColor: '#374151', color: '#fff', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
                                 />
@@ -559,11 +614,6 @@ export default function AnalyticsDashboard({
                                     align="right"
                                     iconSize={10}
                                     wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
-                                    formatter={(value, entry: any) => (
-                                        <span className="text-gray-300 ml-1">
-                                            {value} <span className="text-gray-500">({entry.payload.value.toLocaleString()})</span>
-                                        </span>
-                                    )}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -572,15 +622,15 @@ export default function AnalyticsDashboard({
 
                 {/* Interests List */}
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-white mb-4">Interesses</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Interesses</h3>
                     <div className="flex-1 space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700">
                         {interestData.slice(0, 10).map((item, i) => (
                             <div key={i} className="space-y-1">
                                 <div className="flex items-center justify-between text-xs">
-                                    <span className="text-gray-300 font-medium truncate max-w-[180px]" title={item.name}>{item.name}</span>
-                                    <span className="text-gray-400">{item.value.toLocaleString()}</span>
+                                    <span className="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[180px]" title={item.name}>{item.name}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{item.value.toLocaleString()}</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-teal-500 rounded-full"
                                         style={{ width: `${Math.min(((item.value / (interestData[0]?.value || 1)) * 100), 100)}%` }}
