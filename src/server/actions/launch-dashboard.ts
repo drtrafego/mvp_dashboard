@@ -81,6 +81,8 @@ export async function getLaunchMetrics(from?: string, to?: string): Promise<Laun
         utmSource: leadAttribution.source,
         utmMedium: leadAttribution.medium,
         utmCampaign: leadAttribution.utmCampaign,
+        utmTerm: leadAttribution.utmTerm,
+        utmContent: leadAttribution.utmContent,
     })
         .from(leadAttribution)
         .where(and(
