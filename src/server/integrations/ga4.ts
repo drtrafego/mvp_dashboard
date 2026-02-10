@@ -9,7 +9,7 @@ export async function getGA4Data(accessToken: string, propertyId: string, days =
         days,
         'today',
         [{ name: 'date' }, { name: 'sessionDefaultChannelGroup' }],
-        [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'conversions' }]
+        [{ name: 'sessions' }, { name: 'totalUsers' }, { name: 'newUsers' }, { name: 'conversions' }, { name: 'engagementRate' }]
     );
 }
 

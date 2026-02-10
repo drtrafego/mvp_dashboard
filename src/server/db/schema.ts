@@ -103,6 +103,7 @@ export const campaignMetrics = pgTable("campaign_metrics", {
 
     // GA4 - Engagement Metrics
     activeUsers: integer("active_users"),
+    newUsers: integer("new_users"),
     sessions: integer("sessions"),
     engagedSessions: integer("engaged_sessions"), // Sessions with engagement
     averageSessionDuration: numeric("avg_session_duration", { precision: 10, scale: 2 }),
