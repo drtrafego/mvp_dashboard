@@ -1,6 +1,6 @@
 import DashboardLaunch from "./dashboard-launch";
 import { getLaunchMetrics } from "@/server/actions/launch-dashboard";
-import DateRangeHeader from "@/components/layout/date-range-header";
+import DateRangeHeader from "@/components/layout/DateRangeHeader";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
