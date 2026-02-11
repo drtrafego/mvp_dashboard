@@ -50,7 +50,7 @@ export default function SettingsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-    const [activeTab, setActiveTab] = useState("integrations");
+    const [activeTab, setActiveTab] = useState("team");
 
     // Team Data
     const [members, setMembers] = useState<any[]>([]);
@@ -213,17 +213,7 @@ export default function SettingsPage() {
         );
     }
 
-    if (isAdmin === false) {
-        return (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-8 flex items-center justify-center">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center max-w-md">
-                    <Shield className="w-12 h-12 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-red-800">Acesso Restrito</h2>
-                    <p className="mt-2 text-red-600">Apenas administradores podem acessar as configurações.</p>
-                </div>
-            </div>
-        );
-    }
+    // Non-admins can access Team and Appearance tabs, but not Integrations
 
     const canManageTeam = currentUserRole === "admin" || currentUserRole === "owner";
 
@@ -243,9 +233,9 @@ export default function SettingsPage() {
                     </div>
                 )}
 
-                <Tabs defaultValue="integrations" className="space-y-6" onValueChange={setActiveTab}>
+                <Tabs defaultValue={isAdmin ? "integrations" : "team"} className="space-y-6" onValueChange={setActiveTab}>
                     <TabsList className="bg-white dark:bg-gray-900 p-1 rounded-xl border border-gray-200 dark:border-gray-800">
-                        <TabsTrigger value="integrations" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/20 dark:data-[state=active]:text-blue-300">Integrações</TabsTrigger>
+                        {isAdmin && <TabsTrigger value="integrations" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/20 dark:data-[state=active]:text-blue-300">Integrações</TabsTrigger>}
                         <TabsTrigger value="team" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/20 dark:data-[state=active]:text-blue-300">Equipe</TabsTrigger>
                         <TabsTrigger value="appearance" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/20 dark:data-[state=active]:text-blue-300">Aparência</TabsTrigger>
                     </TabsList>
