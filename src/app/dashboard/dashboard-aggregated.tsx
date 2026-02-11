@@ -5,7 +5,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { Wallet, Target, DollarSign, PieChart as PieIcon, BarChart3, TrendingUp } from "lucide-react";
+import { Wallet, Target, DollarSign, PieChart as PieIcon, BarChart3, TrendingUp, Layers } from "lucide-react";
 
 type DashboardAggregatedProps = {
     metrics: AggregatedMetrics;
@@ -27,46 +27,38 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
 
     return (
         <div className="space-y-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <KPICard
-                    title="Investimento Total"
-                    value={formatCurrency(summary.totalInvestment)}
-                    icon={<Wallet className="w-5 h-5 text-blue-500" />}
-                    subDetails={
-                        <div className="flex gap-2 text-xs mt-1 text-gray-500">
-                            <span className="text-blue-500">Meta: {formatCurrency(summary.metaSpend)}</span>
-                            <span className="text-red-500">Google: {formatCurrency(summary.googleSpend)}</span>
-                        </div>
-                    }
+            {/* KPI Cards - Consolidated by Platform */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <PlatformSummaryCard
+                    title="Meta Ads"
+                    icon={<Layers className="w-6 h-6 text-blue-500" />}
+                    color="text-blue-500"
+                    metrics={{
+                        spend: summary.metaSpend,
+                        leads: summary.metaLeads,
+                        cpl: summary.metaCpl
+                    }}
                 />
-                <KPICard
-                    title="Leads Consolidados"
-                    value={summary.totalLeads.toLocaleString()}
-                    icon={<Target className="w-5 h-5 text-purple-500" />}
-                    subDetails={
-                        <div className="flex gap-2 text-xs mt-1 text-gray-500">
-                            <span className="text-blue-500">Meta: {summary.metaLeads}</span>
-                            <span className="text-red-500">Google: {summary.googleLeads}</span>
-                        </div>
-                    }
+                <PlatformSummaryCard
+                    title="Google Ads"
+                    icon={<Target className="w-6 h-6 text-red-500" />}
+                    color="text-red-500"
+                    metrics={{
+                        spend: summary.googleSpend,
+                        leads: summary.googleLeads,
+                        cpl: summary.googleCpl
+                    }}
                 />
-                <KPICard
-                    title="CPA / CPL Médio"
-                    value={formatCurrency(summary.avgCpl)}
-                    icon={<DollarSign className="w-5 h-5 text-green-500" />}
-                    subDetails={
-                        <div className="flex gap-2 text-xs mt-1 text-gray-500">
-                            <span className="text-blue-500">Meta: {formatCurrency(summary.metaCpl)}</span>
-                            <span className="text-red-500">Google: {formatCurrency(summary.googleCpl)}</span>
-                        </div>
-                    }
-                />
-                <KPICard
-                    title="Conversões"
-                    value={summary.totalConversions.toLocaleString()}
-                    icon={<TrendingUp className="w-5 h-5 text-orange-500" />}
-                    subDetails={<span className="text-xs text-gray-500">Total acumulado</span>}
+                <PlatformSummaryCard
+                    title="Total Consolidado"
+                    icon={<Wallet className="w-6 h-6 text-green-500" />}
+                    color="text-green-500"
+                    metrics={{
+                        spend: summary.totalInvestment,
+                        leads: summary.totalLeads,
+                        cpl: summary.avgCpl
+                    }}
+                    isTotal
                 />
             </div>
 
@@ -180,15 +172,30 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
     );
 }
 
-function KPICard({ title, value, icon, subDetails }: { title: string; value: string; icon: React.ReactNode; subDetails?: React.ReactNode }) {
+function PlatformSummaryCard({ title, icon, color, metrics, isTotal }: { title: string, icon: React.ReactNode, color: string, metrics: { spend: number, leads: number, cpl: number }, isTotal?: boolean }) {
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-            <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">{icon}</div>
+        <div className={`rounded-xl shadow-sm border p-6 flex flex-col ${isTotal ? 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-green-200 dark:border-green-900/50' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+            <div className="flex items-center gap-3 mb-6">
+                <div className={`p-3 rounded-lg ${isTotal ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                    {icon}
+                </div>
+                <h3 className={`text-lg font-bold ${color}`}>{title}</h3>
             </div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
-            {subDetails}
+
+            <div className="grid grid-cols-1 gap-4">
+                <div className="flex justify-between items-end border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">Investimento</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.spend)}</span>
+                </div>
+                <div className="flex justify-between items-end border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">Leads</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">{metrics.leads.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-end">
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">CPL Médio</span>
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(metrics.cpl)}</span>
+                </div>
+            </div>
         </div>
     );
 }

@@ -2,7 +2,7 @@
 
 import { auth } from "@/server/auth";
 import { biDb } from "@/server/db";
-import { campaignMetrics, leadAttribution, integrations, users } from "@/server/db/schema";
+import { campaignMetrics, integrations, users } from "@/server/db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { subDays, format } from "date-fns";
 
@@ -75,6 +75,11 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
     // 2. Process Metrics
     let metaSpend = 0;
     let googleSpend = 0;
+    let metaLeads = 0;
+    let googleLeads = 0;
+    let otherLeads = 0; // Not used from campaignMetrics yet, but kept for type safety if needed later
+
+    const dailyMap = new Map<string, { metaSpend: number, googleSpend: number, metaLeads: number, googleLeads: number, totalLeads: number }>();
 
     // For leads, we might prefer 'leadAttribution' table for accuracy if available,
     // but campaignMetrics also has 'leads' column if synced correctly.
@@ -83,61 +88,33 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
     // The requirement says "Launch Dashboard" uses leadAttribution.
     // Let's try to use leadAttribution for Leads to be consistent with Launch Dashboard.
 
-    const leadsData = await biDb.select({
-        date: leadAttribution.conversionDate,
-        source: leadAttribution.source, // 'meta', 'google'
-    })
-        .from(leadAttribution)
-        .where(and(
-            eq(leadAttribution.organizationId, orgId),
-            gte(leadAttribution.conversionDate, startDate),
-            lte(leadAttribution.conversionDate, endDate)
-        ));
+    // Removed separate leadAttribution processing in favor of campaignMetrics for this dashboard view
+    // to ensure alignment with spend data and correct chart population.
 
-    let metaLeads = 0;
-    let googleLeads = 0;
-    let otherLeads = 0;
-
-    // Process Leads
-    const dailyMap = new Map<string, { metaSpend: number, googleSpend: number, metaLeads: number, googleLeads: number, totalLeads: number }>();
-
-    leadsData.forEach(l => {
-        const source = l.source?.toLowerCase() || 'other';
-        const date = format(l.date, 'yyyy-MM-dd');
-
-        if (!dailyMap.has(date)) dailyMap.set(date, { metaSpend: 0, googleSpend: 0, metaLeads: 0, googleLeads: 0, totalLeads: 0 });
-        const entry = dailyMap.get(date)!;
-
-        entry.totalLeads++;
-
-        if (source.includes('meta') || source.includes('facebook') || source.includes('instagram')) {
-            metaLeads++;
-            entry.metaLeads++;
-        } else if (source.includes('google')) {
-            googleLeads++;
-            entry.googleLeads++;
-        } else {
-            otherLeads++;
-        }
-    });
-
-    // Process Spend & Map Integration
+    // Process Spend & Leads & Map Integration
     metricsData.forEach(m => {
         const date = m.date ? format(m.date, 'yyyy-MM-dd') : null;
         if (!date) return;
 
         const provider = integrationMap.get(m.integrationId);
         const spend = Number(m.spend || 0);
+        const leads = Number(m.leads || 0);
 
         if (!dailyMap.has(date)) dailyMap.set(date, { metaSpend: 0, googleSpend: 0, metaLeads: 0, googleLeads: 0, totalLeads: 0 });
         const entry = dailyMap.get(date)!;
 
+        entry.totalLeads += leads; // Total leads from all sources that are in campaignMetrics
+
         if (provider === 'meta') {
             metaSpend += spend;
+            metaLeads += leads; // Accumulate global Meta leads
             entry.metaSpend += spend;
+            entry.metaLeads += leads;
         } else if (provider === 'google_ads') {
             googleSpend += spend;
+            googleLeads += leads; // Accumulate global Google leads
             entry.googleSpend += spend;
+            entry.googleLeads += leads;
         }
     });
 

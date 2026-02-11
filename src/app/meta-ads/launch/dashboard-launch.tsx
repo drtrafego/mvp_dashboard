@@ -171,7 +171,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 <Card className="lg:col-span-4 flex flex-col min-h-[400px]">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                         <Thermometer size={16} className="text-red-400" />
-                        Temperatura + Pesquisa (Visão Geral)
+                        Temperatura do Lançamento
                     </h3>
                     <div className="flex-1 flex items-center justify-center">
                         <ResponsiveContainer width="100%" height="100%">
@@ -209,7 +209,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
 
                 {/* Daily Leads by Source - Evolution (8 cols) */}
                 <Card className="lg:col-span-8 flex flex-col min-h-[400px] bg-white dark:bg-[#1a1d2e] border-gray-200 dark:border-indigo-900/30">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 pl-2">Captação - UTM SOURCE (Evolução Diária)</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4 pl-2">Evolução de Leads por Origem</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={dailyBySource || []}>
@@ -248,7 +248,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
             {/* Row 3: Daily Bars (Leads & Investment) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Leads por Dia (Barras)</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Volume Diário de Leads</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={safeDaily}>
@@ -274,7 +274,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 </Card>
 
                 <Card className="flex flex-col min-h-[350px]">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Investimento por Dia (Barras)</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Investimento Diário</h3>
                     <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={safeDaily}>
@@ -307,7 +307,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 {/* UTM Source Table */}
                 <Card className="overflow-hidden !p-0 bg-white dark:bg-[#1a1d2e] border-gray-200 dark:border-indigo-900/30">
                     <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-white/5">
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">Utm Source</h3>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">Origem do Tráfego (Source)</h3>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
@@ -334,7 +334,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                 {/* UTM Medium Table */}
                 <Card className="overflow-hidden !p-0 bg-white dark:bg-[#0f172a] border-gray-200 dark:border-blue-900/30">
                     <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-blue-50 dark:bg-blue-900/20">
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">UTM MEDIUM</h3>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">Tipo de Mídia (Medium)</h3>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
@@ -363,7 +363,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                     {/* UTM Term Table */}
                     <Card className="overflow-hidden !p-0 bg-white dark:bg-[#1e1b4b] border-gray-200 dark:border-purple-900/30">
                         <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-purple-50 dark:bg-purple-900/20">
-                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Captação - UTM TERM</h3>
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Termos de Campanha</h3>
                         </div>
                         <div className="overflow-x-auto max-h-[400px]">
                             <table className="w-full text-sm text-left">
@@ -388,7 +388,7 @@ export default function DashboardLaunch({ metrics }: DashboardLaunchProps) {
                     {/* UTM Content (Ad Name) Chart */}
                     <Card className="flex flex-col min-h-[400px] bg-white dark:bg-[#172554] border-gray-200 dark:border-blue-800/30">
                         <div className="p-4 border-b border-gray-200 dark:border-white/5 bg-blue-50 dark:bg-blue-800/20">
-                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Captação - UTM CONTENT / AD NAME</h3>
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Performance por Criativo</h3>
                         </div>
                         <div className="flex-1 flex items-center justify-center p-4">
                             <ResponsiveContainer width="100%" height="100%">
