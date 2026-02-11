@@ -261,6 +261,41 @@ async function seed() {
         { name: "tiktok", pct: 0.02 },
     ];
 
+    // Cities (City|Region format for filtering)
+    const cities = [
+        { name: "São Paulo|São Paulo", pct: 0.28 },
+        { name: "Rio de Janeiro|Rio de Janeiro", pct: 0.15 },
+        { name: "Belo Horizonte|Minas Gerais", pct: 0.08 },
+        { name: "Curitiba|Paraná", pct: 0.06 },
+        { name: "Brasília|Distrito Federal", pct: 0.05 },
+        { name: "Porto Alegre|Rio Grande do Sul", pct: 0.04 },
+        { name: "Salvador|Bahia", pct: 0.04 },
+        { name: "Fortaleza|Ceará", pct: 0.03 },
+        { name: "Recife|Pernambuco", pct: 0.03 },
+        { name: "Goiânia|Goiás", pct: 0.03 },
+        { name: "Campinas|São Paulo", pct: 0.03 },
+        { name: "Manaus|Amazonas", pct: 0.02 },
+        { name: "Vitória|Espírito Santo", pct: 0.02 },
+        { name: "Florianópolis|Santa Catarina", pct: 0.02 },
+        { name: "Belém|Pará", pct: 0.01 },
+    ];
+
+    // Regions
+    const regions = [
+        { name: "São Paulo", pct: 0.35 },
+        { name: "Rio de Janeiro", pct: 0.15 },
+        { name: "Minas Gerais", pct: 0.10 },
+        { name: "Paraná", pct: 0.08 },
+        { name: "Rio Grande do Sul", pct: 0.06 },
+        { name: "Bahia", pct: 0.05 },
+        { name: "Distrito Federal", pct: 0.05 },
+        { name: "Santa Catarina", pct: 0.04 },
+        { name: "Ceará", pct: 0.03 },
+        { name: "Pernambuco", pct: 0.03 },
+        { name: "Goiás", pct: 0.03 },
+        { name: "Outros", pct: 0.03 },
+    ];
+
     for (let dayIdx = 0; dayIdx < DAYS; dayIdx++) {
         const date = subDays(today, DAYS - dayIdx - 1);
         const t = trend(dayIdx, DAYS);
@@ -285,6 +320,8 @@ async function seed() {
         makeDim("BROWSER", browsers);
         makeDim("PAGE_PATH", pages);
         makeDim("SOURCE", sources);
+        makeDim("CITY", cities);
+        makeDim("REGION", regions);
     }
 
     for (let i = 0; i < dimRows.length; i += BATCH) {

@@ -4,10 +4,9 @@
 import { auth } from "@/server/auth";
 import { biDb } from "@/server/db";
 import { campaignMetrics, integrations, users, analyticsDimensions } from "@/server/db/schema";
-import { eq, and, desc, gte, lte } from "drizzle-orm";
-import { subDays, startOfDay, endOfDay, parseISO } from "date-fns";
+import { eq, and, gte, lte } from "drizzle-orm";
+import { subDays } from "date-fns";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 // import { BetaAnalyticsDataClient } from "@google-analytics/data"; // Replaced
 import { getValidAccessToken } from "@/server/utils/token-refresh";
 import { runReport } from "@/server/integrations/ga4";
@@ -154,6 +153,8 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
     const browserMap = new Map<string, number>();
     const pageMap = new Map<string, number>();
     const sourceMap = new Map<string, { name: string; sessions: number; users: number; conversions: number }>();
+    const cityMap = new Map<string, { name: string; region: string; value: number }>();
+    const regionMap = new Map<string, number>();
 
     // Check if we have dimension data
     const hasDimensions = dimData.length > 0;
@@ -182,6 +183,28 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
                 s.sessions += val;
                 s.users += usersVal;
                 s.conversions += convVal;
+            } else if (row.dimensionType === 'SOURCE') {
+                if (!sourceMap.has(row.dimensionValue)) {
+                    sourceMap.set(row.dimensionValue, { name: row.dimensionValue, sessions: 0, users: 0, conversions: 0 });
+                }
+                const s = sourceMap.get(row.dimensionValue)!;
+                s.sessions += val;
+                s.users += usersVal;
+                s.conversions += convVal;
+            } else if (row.dimensionType === 'CITY') {
+                // Format: "City|Region"
+                const [city, region] = row.dimensionValue.split('|');
+                const cityName = city || row.dimensionValue;
+                const regionName = region || '';
+
+                // Use cityName as key
+                if (!cityMap.has(cityName)) {
+                    cityMap.set(cityName, { name: cityName, region: regionName, value: 0 });
+                }
+                const c = cityMap.get(cityName)!;
+                c.value += val; // Accesses (sessions)
+            } else if (row.dimensionType === 'REGION') {
+                regionMap.set(row.dimensionValue, (regionMap.get(row.dimensionValue) || 0) + val);
             }
         }
     } else {
@@ -278,8 +301,13 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
 
     // Google Analytics Data Fetch (City/Region) using OAuth Token from DB
     // This matches the pattern in sync-google.ts and uses the user's connected account.
-    let cityData: any[] = [];
-    let regionData: any[] = [];
+
+    // Initialize with DB data if available
+    let cityData: any[] = Array.from(cityMap.values()).sort((a, b) => b.value - a.value).slice(0, 20);
+    let regionData: any[] = Array.from(regionMap.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+
     let genderData: any[] = [];
     let interestData: any[] = [];
 
