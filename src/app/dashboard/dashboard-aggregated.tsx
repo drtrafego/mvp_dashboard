@@ -5,7 +5,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { Wallet, Target, DollarSign, PieChart as PieIcon, BarChart3, TrendingUp, Layers } from "lucide-react";
+import { Wallet, Target, Layers } from "lucide-react";
 
 type DashboardAggregatedProps = {
     metrics: AggregatedMetrics;
@@ -22,7 +22,7 @@ const COLORS = {
 
 const formatCurrency = (val: number) => `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
-export default function DashboardAggregated({ metrics, settings }: DashboardAggregatedProps) {
+export default function DashboardAggregated({ metrics }: DashboardAggregatedProps) {
     const { summary, daily, pieInvestment, pieLeads } = metrics;
 
     return (
@@ -84,7 +84,11 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
                                 formatter={(val: number | undefined) => formatCurrency(val || 0)}
                                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
                             />
-                            <Legend verticalAlign="bottom" height={36} />
+                            <Legend
+                                verticalAlign="bottom"
+                                height={36}
+                                wrapperStyle={{ color: '#9ca3af' }}
+                            />
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartCard>
@@ -108,7 +112,11 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
                             />
-                            <Legend verticalAlign="bottom" height={36} />
+                            <Legend
+                                verticalAlign="bottom"
+                                height={36}
+                                wrapperStyle={{ color: '#9ca3af' }}
+                            />
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartCard>
@@ -139,8 +147,8 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
                                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
                             />
                             <Legend />
-                            <Bar dataKey="metaSpend" name="Meta Ads" fill={COLORS.meta} stackId="a" radius={[0, 0, 4, 4]} />
-                            <Bar dataKey="googleSpend" name="Google Ads" fill={COLORS.google} stackId="a" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="metaSpend" name="Meta Ads" fill={COLORS.meta} radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="googleSpend" name="Google Ads" fill={COLORS.google} radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </ChartCard>
@@ -162,8 +170,8 @@ export default function DashboardAggregated({ metrics, settings }: DashboardAggr
                                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
                             />
                             <Legend />
-                            <Bar dataKey="metaLeads" name="Meta Leads" fill={COLORS.meta} stackId="a" />
-                            <Bar dataKey="googleLeads" name="Google Leads" fill={COLORS.google} stackId="a" />
+                            <Bar dataKey="metaLeads" name="Meta Leads" fill={COLORS.meta} radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="googleLeads" name="Google Leads" fill={COLORS.google} radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </ChartCard>

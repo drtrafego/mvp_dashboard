@@ -2,7 +2,7 @@
 
 import { auth } from "@/server/auth";
 import { biDb } from "@/server/db";
-import { campaignMetrics, integrations, users } from "@/server/db/schema";
+import { campaignMetrics, integrations, leadAttribution, users } from "@/server/db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { subDays, format } from "date-fns";
 
@@ -45,16 +45,10 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
     const endDate = to ? new Date(`${to}T23:59:59.999Z`) : new Date();
     const startDate = from ? new Date(`${from}T00:00:00.000Z`) : subDays(new Date(), 30);
 
-    // 1. Fetch Campaign Metrics (Includes Platform breakdown via Integration)
-    // We need to join with integrations table to know which provider it is
-    // But Drizzle Query Builder with 'with' is easier if relations are set up, 
-    // or we just fetch metrics and manual join if we have integrationId
-    // campaignMetrics has integrationId.
-
+    // 1. Fetch Campaign Metrics (Spend)
     const metricsData = await biDb.select({
         date: campaignMetrics.date,
         spend: campaignMetrics.spend,
-        leads: campaignMetrics.leads,
         integrationId: campaignMetrics.integrationId,
     })
         .from(campaignMetrics)
@@ -62,6 +56,18 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
             eq(campaignMetrics.organizationId, orgId),
             gte(campaignMetrics.date, startDate),
             lte(campaignMetrics.date, endDate)
+        ));
+
+    // 2. Fetch Leads from Lead Attribution (Source of Truth for Leads)
+    const leadsData = await biDb.select({
+        date: leadAttribution.conversionDate,
+        source: leadAttribution.source,
+    })
+        .from(leadAttribution)
+        .where(and(
+            eq(leadAttribution.organizationId, orgId),
+            gte(leadAttribution.conversionDate, startDate),
+            lte(leadAttribution.conversionDate, endDate)
         ));
 
     // Get integrations to map ID -> Provider
@@ -72,49 +78,63 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
 
     const integrationMap = new Map(orgIntegrations.map(i => [i.id, i.provider]));
 
-    // 2. Process Metrics
+    // 3. Process Metrics
     let metaSpend = 0;
     let googleSpend = 0;
     let metaLeads = 0;
     let googleLeads = 0;
-    let otherLeads = 0; // Not used from campaignMetrics yet, but kept for type safety if needed later
+    let otherLeads = 0;
 
     const dailyMap = new Map<string, { metaSpend: number, googleSpend: number, metaLeads: number, googleLeads: number, totalLeads: number }>();
 
-    // For leads, we might prefer 'leadAttribution' table for accuracy if available,
-    // but campaignMetrics also has 'leads' column if synced correctly.
-    // Let's use campaignMetrics for leads for now to align with spend, 
-    // OR fetch leadAttribution for better source truth?
-    // The requirement says "Launch Dashboard" uses leadAttribution.
-    // Let's try to use leadAttribution for Leads to be consistent with Launch Dashboard.
+    // Helper to ensure daily entry exists
+    const getDailyEntry = (dateKey: string) => {
+        if (!dailyMap.has(dateKey)) {
+            dailyMap.set(dateKey, { metaSpend: 0, googleSpend: 0, metaLeads: 0, googleLeads: 0, totalLeads: 0 });
+        }
+        return dailyMap.get(dateKey)!;
+    };
 
-    // Removed separate leadAttribution processing in favor of campaignMetrics for this dashboard view
-    // to ensure alignment with spend data and correct chart population.
-
-    // Process Spend & Leads & Map Integration
+    // Process Spend
     metricsData.forEach(m => {
         const date = m.date ? format(m.date, 'yyyy-MM-dd') : null;
         if (!date) return;
 
         const provider = integrationMap.get(m.integrationId);
         const spend = Number(m.spend || 0);
-        const leads = Number(m.leads || 0);
 
-        if (!dailyMap.has(date)) dailyMap.set(date, { metaSpend: 0, googleSpend: 0, metaLeads: 0, googleLeads: 0, totalLeads: 0 });
-        const entry = dailyMap.get(date)!;
-
-        entry.totalLeads += leads; // Total leads from all sources that are in campaignMetrics
+        const entry = getDailyEntry(date);
 
         if (provider === 'meta') {
             metaSpend += spend;
-            metaLeads += leads; // Accumulate global Meta leads
             entry.metaSpend += spend;
-            entry.metaLeads += leads;
         } else if (provider === 'google_ads') {
             googleSpend += spend;
-            googleLeads += leads; // Accumulate global Google leads
             entry.googleSpend += spend;
-            entry.googleLeads += leads;
+        }
+    });
+
+    // Process Leads
+    leadsData.forEach(l => {
+        const date = l.date ? format(l.date, 'yyyy-MM-dd') : null;
+        if (!date) return;
+
+        const entry = getDailyEntry(date);
+        const source = (l.source || "").toLowerCase();
+
+        entry.totalLeads += 1;
+
+        // Simple heuristic for platform attribution based on utm_source
+        // Adjust these rules based on your actual data patterns
+        if (source.includes('facebook') || source.includes('instagram') || source.includes('meta') || source.includes('fb') || source.includes('ig')) {
+            metaLeads += 1;
+            entry.metaLeads += 1;
+        } else if (source.includes('google') || source.includes('adwords') || source.includes('youtube') || source.includes('gads')) {
+            googleLeads += 1;
+            entry.googleLeads += 1;
+        } else {
+            otherLeads += 1;
+            // entry.otherLeads? We don't track otherLeads in daily breakdown typically, but included in total
         }
     });
 
@@ -135,7 +155,7 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
         summary: {
             totalInvestment,
             totalLeads,
-            totalConversions: totalLeads, // Assuming leads = conversions for this dashboard
+            totalConversions: totalLeads,
             avgCpl,
             metaSpend,
             googleSpend,
