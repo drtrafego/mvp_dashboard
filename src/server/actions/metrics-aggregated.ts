@@ -26,6 +26,9 @@ export type AggregatedMetrics = {
         metaLeads: number;
         googleLeads: number;
         totalLeads: number;
+        metaCpl: number;
+        googleCpl: number;
+        totalCpl: number;
     }[];
     pieInvestment: { name: string; value: number; fill: string }[];
     pieLeads: { name: string; value: number; fill: string }[];
@@ -85,12 +88,18 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
     let googleLeads = 0;
     let otherLeads = 0;
 
-    const dailyMap = new Map<string, { metaSpend: number, googleSpend: number, metaLeads: number, googleLeads: number, totalLeads: number }>();
+    const dailyMap = new Map<string, {
+        metaSpend: number, googleSpend: number,
+        metaLeads: number, googleLeads: number, totalLeads: number
+    }>();
 
     // Helper to ensure daily entry exists
     const getDailyEntry = (dateKey: string) => {
         if (!dailyMap.has(dateKey)) {
-            dailyMap.set(dateKey, { metaSpend: 0, googleSpend: 0, metaLeads: 0, googleLeads: 0, totalLeads: 0 });
+            dailyMap.set(dateKey, {
+                metaSpend: 0, googleSpend: 0,
+                metaLeads: 0, googleLeads: 0, totalLeads: 0
+            });
         }
         return dailyMap.get(dateKey)!;
     };
@@ -146,9 +155,22 @@ export async function getAggregatedMetrics(from?: string, to?: string): Promise<
     const metaCpl = metaLeads > 0 ? metaSpend / metaLeads : 0;
     const googleCpl = googleLeads > 0 ? googleSpend / googleLeads : 0;
 
-    // Daily Array
+    // Daily Array with CPL Calculation
     const daily = Array.from(dailyMap.entries())
-        .map(([date, val]) => ({ date, ...val }))
+        .map(([date, val]) => {
+            const totalDailySpend = val.metaSpend + val.googleSpend;
+            const dailyMetaCpl = val.metaLeads > 0 ? val.metaSpend / val.metaLeads : 0;
+            const dailyGoogleCpl = val.googleLeads > 0 ? val.googleSpend / val.googleLeads : 0;
+            const dailyTotalCpl = val.totalLeads > 0 ? totalDailySpend / val.totalLeads : 0;
+
+            return {
+                date,
+                ...val,
+                metaCpl: dailyMetaCpl,
+                googleCpl: dailyGoogleCpl,
+                totalCpl: dailyTotalCpl
+            };
+        })
         .sort((a, b) => a.date.localeCompare(b.date));
 
     return {

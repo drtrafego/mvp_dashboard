@@ -3,7 +3,7 @@
 import { AggregatedMetrics } from "@/server/actions/metrics-aggregated";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend
+    PieChart, Pie, Cell, Legend, LineChart, Line
 } from 'recharts';
 import { Wallet, Target, Layers } from "lucide-react";
 
@@ -173,6 +173,36 @@ export default function DashboardAggregated({ metrics }: DashboardAggregatedProp
                             <Bar dataKey="metaLeads" name="Meta Leads" fill={COLORS.meta} radius={[4, 4, 0, 0]} />
                             <Bar dataKey="googleLeads" name="Google Leads" fill={COLORS.google} radius={[4, 4, 0, 0]} />
                         </BarChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+
+                <ChartCard title="Evolução do CPL - Por Plataforma">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={daily}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
+                            <XAxis
+                                dataKey="date"
+                                fontSize={10}
+                                tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                axisLine={false}
+                                tickLine={false}
+                            />
+                            <YAxis
+                                fontSize={10}
+                                tickFormatter={(val) => `R$${val}`}
+                                axisLine={false}
+                                tickLine={false}
+                            />
+                            <Tooltip
+                                formatter={(val: number | undefined) => formatCurrency(val || 0)}
+                                labelFormatter={(label) => new Date(label).toLocaleDateString('pt-BR')}
+                                contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
+                            />
+                            <Legend />
+                            <Line type="monotone" dataKey="metaCpl" name="Meta Ads CPL" stroke={COLORS.meta} strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="googleCpl" name="Google Ads CPL" stroke={COLORS.google} strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="totalCpl" name="CPL Geral" stroke={COLORS.total} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                        </LineChart>
                     </ResponsiveContainer>
                 </ChartCard>
             </div>
