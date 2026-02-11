@@ -3,7 +3,7 @@
 import { AggregatedMetrics } from "@/server/actions/metrics-aggregated";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend, LineChart, Line
+    PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { Wallet, Target, Layers } from "lucide-react";
 
@@ -178,7 +178,7 @@ export default function DashboardAggregated({ metrics }: DashboardAggregatedProp
 
                 <ChartCard title="Evolução do CPL - Por Plataforma">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={daily}>
+                        <BarChart data={daily}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
                             <XAxis
                                 dataKey="date"
@@ -199,10 +199,9 @@ export default function DashboardAggregated({ metrics }: DashboardAggregatedProp
                                 contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc', borderRadius: '8px' }}
                             />
                             <Legend />
-                            <Line type="monotone" dataKey="metaCpl" name="Meta Ads CPL" stroke={COLORS.meta} strokeWidth={2} dot={false} />
-                            <Line type="monotone" dataKey="googleCpl" name="Google Ads CPL" stroke={COLORS.google} strokeWidth={2} dot={false} />
-                            <Line type="monotone" dataKey="totalCpl" name="CPL Geral" stroke={COLORS.total} strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                        </LineChart>
+                            <Bar dataKey="metaCpl" name="Meta Ads CPL" fill={COLORS.meta} radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="googleCpl" name="Google Ads CPL" fill={COLORS.google} radius={[4, 4, 0, 0]} />
+                        </BarChart>
                     </ResponsiveContainer>
                 </ChartCard>
             </div>
