@@ -69,6 +69,7 @@ export default async function GoogleAdsPage() {
                     daily={metrics.daily}
                     campaigns={metrics.campaigns}
                     keywords={metrics.keywords}
+                    genderData={metrics.genderData}
                 />
             ) : (
                 <div className="flex items-center justify-center h-64">

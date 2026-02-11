@@ -291,8 +291,12 @@ export async function getAnalyticsMetrics(from?: string, to?: string): Promise<A
         )
     });
 
+    const isDemoToken = integration?.accessToken === "DEMO_TOKEN";
+
     if (!integration || !integration.accessToken) {
         console.warn("[getAnalyticsMetrics] No Google Analytics integration found or missing token. Skipping Map data.");
+    } else if (isDemoToken) {
+        console.warn("[getAnalyticsMetrics] Demo token detected. Skipping real API calls.");
     } else {
         try {
             // 2. Refresh Token if needed

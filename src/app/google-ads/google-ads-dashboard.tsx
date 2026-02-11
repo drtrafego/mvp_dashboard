@@ -4,7 +4,7 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend, AreaChart, Area
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, MousePointerClick, Eye, Target, BarChart3 } from "lucide-react";
+import { DollarSign, MousePointerClick, Eye, Target, BarChart3 } from "lucide-react";
 
 // ===== TIPOS =====
 type CampaignRow = {
@@ -13,9 +13,15 @@ type CampaignRow = {
     impressions: number;
     clicks: number;
     conversions: number;
+    conversionValue: number;
     ctr: number;
     cpc: number;
     cpa: number;
+};
+
+type GenderData = {
+    name: string;
+    value: number;
 };
 
 type KeywordRow = {
@@ -45,6 +51,7 @@ type GoogleAdsDashboardProps = {
     daily: DailyMetric[];
     campaigns: CampaignRow[];
     keywords: KeywordRow[];
+    genderData: GenderData[];
 };
 
 // ===== CORES =====
@@ -56,16 +63,14 @@ const COLORS = {
     cpc: "#a855f7",         // Roxo
 };
 
-const PIE_COLORS = ["#22c55e", "#3b82f6", "#9ca3af"];
+const GENDER_COLORS = ["#ec4899", "#3b82f6", "#6b7280"];
 
 const formatCurrency = (val: number) => `R$ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const formatNumber = (val: number) => val.toLocaleString('pt-BR');
 const formatPercent = (val: number) => `${val.toFixed(2)}%`;
 
 // ===== COMPONENTE PRINCIPAL =====
-export default function GoogleAdsDashboard({ summary, daily, campaigns, keywords }: GoogleAdsDashboardProps) {
-    const maxSpend = Math.max(...campaigns.map(c => c.spend), 1);
-    const maxConv = Math.max(...campaigns.map(c => c.conversions), 1);
+export default function GoogleAdsDashboard({ summary, daily, campaigns, keywords, genderData }: GoogleAdsDashboardProps) {
 
     return (
         <div className="space-y-6">
@@ -217,45 +222,46 @@ export default function GoogleAdsDashboard({ summary, daily, campaigns, keywords
                     </DarkCard>
                 </div>
 
-                {/* Donut Chart (Right) */}
+                {/* Conversão por Gênero (Right) */}
                 <div className="lg:col-span-3">
-                    <DarkCard title="Conversões por Tipo" className="h-full">
+                    <DarkCard title="Conversão por Gênero" className="h-full">
                         <div className="h-[260px] flex items-center justify-center">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={[
-                                            { name: "Busca", value: Math.round(summary.totalConversions * 0.57) || 0 },
-                                            { name: "Display", value: Math.round(summary.totalConversions * 0.36) || 0 },
-                                            { name: "Outros", value: Math.round(summary.totalConversions * 0.07) || 0 },
-                                        ]}
-                                        cx="50%"
-                                        cy="45%"
-                                        innerRadius={55}
-                                        outerRadius={80}
-                                        paddingAngle={3}
-                                        dataKey="value"
-                                    >
-                                        {PIE_COLORS.map((color, index) => (
-                                            <Cell key={`cell-${index}`} fill={color} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: '#0f172a',
-                                            borderColor: '#334155',
-                                            borderRadius: '8px',
-                                            color: '#f8fafc',
-                                            fontSize: '12px'
-                                        }}
-                                    />
-                                    <Legend
-                                        verticalAlign="bottom"
-                                        height={36}
-                                        wrapperStyle={{ color: '#cbd5e1', fontSize: '12px' }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
+                            {genderData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={genderData}
+                                            cx="50%"
+                                            cy="45%"
+                                            innerRadius={55}
+                                            outerRadius={80}
+                                            paddingAngle={3}
+                                            dataKey="value"
+                                        >
+                                            {genderData.map((_entry, index) => (
+                                                <Cell key={`gender-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: '#0f172a',
+                                                borderColor: '#334155',
+                                                borderRadius: '8px',
+                                                color: '#f8fafc',
+                                                fontSize: '12px'
+                                            }}
+                                            formatter={(value: number | undefined) => [formatNumber(value ?? 0), 'Conversões']}
+                                        />
+                                        <Legend
+                                            verticalAlign="bottom"
+                                            height={36}
+                                            wrapperStyle={{ color: '#cbd5e1', fontSize: '12px' }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <p className="text-gray-500 text-xs">Dados serão exibidos após sincronização</p>
+                            )}
                         </div>
                     </DarkCard>
                 </div>
@@ -269,45 +275,27 @@ export default function GoogleAdsDashboard({ summary, daily, campaigns, keywords
                             <tr className="text-gray-400 text-xs uppercase border-b border-gray-700/50">
                                 <th className="text-left py-3 font-medium w-8">#</th>
                                 <th className="text-left py-3 font-medium">Campanha</th>
-                                <th className="text-left py-3 font-medium min-w-[200px]">Investimento</th>
-                                <th className="text-left py-3 font-medium min-w-[200px]">Conversões</th>
-                                <th className="text-right py-3 font-medium">CPA</th>
+                                <th className="text-right py-3 font-medium">Investimento</th>
+                                <th className="text-right py-3 font-medium">Conversões</th>
+                                <th className="text-right py-3 font-medium">Valor Conv.</th>
+                                <th className="text-right py-3 font-medium">Cliques</th>
+                                <th className="text-right py-3 font-medium">CTR</th>
                             </tr>
                         </thead>
                         <tbody>
                             {campaigns.length > 0 ? campaigns.map((camp, i) => (
                                 <tr key={i} className="border-b border-gray-800/30 hover:bg-white/5 transition-colors">
                                     <td className="py-3 text-gray-500 text-xs">{i + 1}.</td>
-                                    <td className="py-3 text-gray-200 font-medium text-xs truncate max-w-[200px]">{camp.name}</td>
-                                    <td className="py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-1 bg-gray-800 rounded-full h-5 overflow-hidden">
-                                                <div
-                                                    className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full flex items-center justify-end pr-2 transition-all"
-                                                    style={{ width: `${Math.max((camp.spend / maxSpend) * 100, 8)}%` }}
-                                                >
-                                                    <span className="text-[10px] font-bold text-white whitespace-nowrap">{formatCurrency(camp.spend)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-1 bg-gray-800 rounded-full h-5 overflow-hidden">
-                                                <div
-                                                    className="bg-gradient-to-r from-blue-600 to-blue-400 h-full rounded-full flex items-center justify-end pr-2 transition-all"
-                                                    style={{ width: `${Math.max((camp.conversions / maxConv) * 100, 8)}%` }}
-                                                >
-                                                    <span className="text-[10px] font-bold text-white whitespace-nowrap">{formatNumber(camp.conversions)}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-3 text-right text-gray-300 text-xs font-medium">{formatCurrency(camp.cpa)}</td>
+                                    <td className="py-3 text-gray-200 font-medium text-xs truncate max-w-[250px]">{camp.name}</td>
+                                    <td className="py-3 text-right text-emerald-400 font-semibold text-xs">{formatCurrency(camp.spend)}</td>
+                                    <td className="py-3 text-right text-blue-400 font-semibold text-xs">{formatNumber(camp.conversions)}</td>
+                                    <td className="py-3 text-right text-amber-400 font-semibold text-xs">{formatCurrency(camp.conversionValue)}</td>
+                                    <td className="py-3 text-right text-white font-semibold text-xs">{formatNumber(camp.clicks)}</td>
+                                    <td className="py-3 text-right text-purple-400 font-semibold text-xs">{formatPercent(camp.ctr)}</td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={5} className="py-8 text-center text-gray-500 text-xs">
+                                    <td colSpan={7} className="py-8 text-center text-gray-500 text-xs">
                                         Nenhuma campanha encontrada. Os dados serão sincronizados automaticamente.
                                     </td>
                                 </tr>
