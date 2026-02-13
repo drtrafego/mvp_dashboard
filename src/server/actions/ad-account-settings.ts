@@ -3,7 +3,7 @@
 import { biDb } from "@/server/db";
 import { adAccountSettings, users, accounts, integrations } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
-import { auth } from "@/server/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 import { revalidatePath } from "next/cache";
 
 export type AdAccountSettingsData = {
@@ -15,15 +15,15 @@ export type AdAccountSettingsData = {
 
 // Get current user's organization ID and check admin permission
 async function getAuthorizedOrganization() {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const userSession = await getAuthenticatedUser();
+    if (!userSession?.email) {
         throw new Error("Não autenticado");
     }
 
     const user = await biDb
         .select()
         .from(users)
-        .where(eq(users.email, session.user.email))
+        .where(eq(users.email, userSession.email))
         .limit(1);
 
     if (!user.length || !user[0].organizationId) {
@@ -32,7 +32,7 @@ async function getAuthorizedOrganization() {
 
     // Check admin permission (DB role OR .env list)
     const adminEmails = process.env.SUPERADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = session.user.email && adminEmails.includes(session.user.email);
+    const isSuperAdmin = userSession.email && adminEmails.includes(userSession.email);
 
     if (!isSuperAdmin && user[0].role !== "admin" && user[0].role !== "owner") {
         throw new Error("Apenas administradores podem gerenciar configurações de contas");
@@ -47,15 +47,15 @@ async function getAuthorizedOrganization() {
 
 // Get ad account settings for current organization
 export async function getAdAccountSettings(): Promise<AdAccountSettingsData | null> {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const userSession = await getAuthenticatedUser();
+    if (!userSession?.email) {
         return null;
     }
 
     const user = await biDb
         .select()
         .from(users)
-        .where(eq(users.email, session.user.email))
+        .where(eq(users.email, userSession.email))
         .limit(1);
 
     if (!user.length || !user[0].organizationId) {
@@ -132,15 +132,15 @@ export async function updateAdAccountSettings(data: AdAccountSettingsData) {
 
 // Check if user is admin
 export async function checkIsAdmin(): Promise<boolean> {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const userSession = await getAuthenticatedUser();
+    if (!userSession?.email) {
         return false;
     }
 
     const user = await biDb
         .select()
         .from(users)
-        .where(eq(users.email, session.user.email))
+        .where(eq(users.email, userSession.email))
         .limit(1);
 
     if (!user.length) {
@@ -149,20 +149,20 @@ export async function checkIsAdmin(): Promise<boolean> {
 
     // Check admin permission (DB role OR .env list)
     const adminEmails = process.env.SUPERADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = session.user.email && adminEmails.includes(session.user.email);
+    const isSuperAdmin = userSession.email && adminEmails.includes(userSession.email);
 
     return isSuperAdmin || user[0].role === "admin" || user[0].role === "owner";
 }
 
 // Manually link current user's Google Account to current Organization
 export async function connectUserGoogleAccount() {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const userSession = await getAuthenticatedUser();
+    if (!userSession?.email) {
         return { success: false, error: "Não autenticado" };
     }
 
     const user = await biDb.query.users.findFirst({
-        where: eq(users.email, session.user.email)
+        where: eq(users.email, userSession.email)
     });
 
     if (!user || !user.organizationId) {

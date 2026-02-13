@@ -4,6 +4,7 @@ import { useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import { cn } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 
 type Props = {
     children: React.ReactNode;
@@ -16,6 +17,19 @@ type Props = {
 export default function DashboardShell({ children, userName, userImage, isSuperAdmin = false, metaDashboardType }: Props) {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const searchParams = useSearchParams();
+    const isEmbedded = searchParams.get("embed") === "true";
+
+    if (isEmbedded) {
+        return (
+            <div className="min-h-screen bg-white dark:bg-gray-950">
+                <main className="w-full h-full p-0 overflow-x-hidden">
+                    {children}
+                </main>
+            </div>
+        );
+    }
+
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-950">

@@ -1,6 +1,22 @@
 import { signIn } from "@/server/auth";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function SignInPage() {
+export default async function SignInPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+    const searchParams = await props.searchParams;
+    const ssoToken = searchParams.sso_token;
+
+    if (ssoToken && typeof ssoToken === 'string') {
+        const cookieStore = await cookies();
+        cookieStore.set('stack-auth-token', ssoToken, {
+            path: '/',
+            secure: true,
+            sameSite: 'none',
+            httpOnly: true,
+        });
+        redirect("/analytics");
+    }
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
             <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-10 shadow-2xl">
